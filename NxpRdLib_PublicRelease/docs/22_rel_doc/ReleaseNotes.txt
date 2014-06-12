@@ -1,0 +1,129 @@
+==============================================================================
+Release Notes - NxpRdLib V2.0.0.0
+==============================================================================
+
+1. Document purpose
+
+This document describes the content of the source package of the NXP
+Reader Library as well as known problems and restrictions.
+The application programming interface itself is
+described in the Programmers Reference Manual.
+
+2. Known problems and restrictions
+
+* Restrictions
+
+  - Supported contactless Readers: NXP Pegoda RD70x (firmware V2.12 or above),
+                                   NXP Pegoda RD710,
+                                   NXP CLRC663,
+                                   NXP MFRC523
+  - Supported SAMs: NXP MIFARE SAM AV2 (P5DF081)
+  - Supported contact Readers: OMNIKEY CardMan 3x21,
+                               OMNIKEY CardMan 5321
+
+This library is written in ANSI C and it is therefore possible to be compiled on any ANSI C compiler.
+For customer convenience, we attach a project release, so that the user can easily load the project and 
+start compilation/development.  
+This project file has the following restriction:
+
+  - Supported Operating Systems: Microsoft Windows XP SP2/SP3
+  - Supported Compiler: MS VC++ 8.0
+
+
+* Known Problems
+
+  - None
+	
+3. Material list
+
+|----BAL
+|--------PcscWin
+|--------Rd70xusbWin
+|--------SerialWin
+|--------Stub
+|
+|----HAL
+|--------Callback
+|--------Rc523
+|--------Rc663
+|--------Rc632
+|--------Rd70x
+|--------Rd710
+|
+|----PAL
+|--------I14443p3a
+|------------Sw
+|------------Rd70x
+|------------Rd710
+|
+|--------I14443p3b
+|------------Sw
+|
+|--------I14443p4
+|------------Sw
+|------------Rd710
+|
+|--------I14443p4a
+|------------Sw
+|------------Rd710
+|
+|--------Mifare
+|------------Sw
+|------------Rd710
+|------------Stub
+|
+|--------EpcUid
+|------------Sw
+|
+|--------Sli15693
+|------------Sw
+|
+|--------Felica
+|------------Sw
+|
+|--------I18092mPI
+|------------Sw
+|
+|----AL
+|--------Mfc
+|------------Sw
+|
+|--------Mful
+|------------Sw
+|
+|----Common
+|--------CidManager
+|------------Sw
+|------------Rd710
+|
+|--------KeyStore
+|------------Sw
+|------------Rc632
+|------------Rc663
+|------------Rd710
+|
+|--------Log
+|--------Tools
+|
+|----docs
+|--------14_user_doc
+|------------EULA.pdf
+|------------Nxp Reader Library.chm
+|
+|--------22_rel_doc
+|------------ReleaseNotes.txt
+|
+|----ex
+
+4. Mandatory material (for Example), not included
+
+* PCSC compatible contact (T=1) reader
+* RD701 contactless reader
+* CLRC663 Eval Board
+* MFRC523 Eval Board
+* Sample cards
+
+5. Revision History
+
+V2.0.0.0 (Build 04072011):
++ First official Non export controlled release
