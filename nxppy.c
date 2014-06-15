@@ -20,7 +20,7 @@ static PyObject *nxppy_read_mifare(PyObject *self, PyObject *args)
 
     char asciiBuffer[UID_ASCII_BUFFER_SIZE];
 
-    if (DetectMifare(&hal, byteBuffer, &byteBufferSize)) {
+    if (DetectMifare(&hal, byteBuffer, &byteBufferSize) == 0) {
         /* reset the IC  */
         readerIC_Cmd_SoftReset(&hal);
 
