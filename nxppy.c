@@ -35,22 +35,55 @@ static PyObject *nxppy_read_mifare(PyObject *self, PyObject *args)
             sprintf(&asciiBuffer[2 * i], "%02X", byteBuffer[i]);
         }
 
-        return PyString_FromString(asciiBuffer);
+        return PyUnicode_FromString(asciiBuffer);
     }
 
     Py_RETURN_NONE;
 }
 
-static PyMethodDef NxppyMethods[] = {
+/*###########################################################
+# Python Extension definitions
+###########################################################*/
+static PyMethodDef nxppy_methods[] = {
     {"read_mifare",  nxppy_read_mifare, METH_VARARGS, "Get the UID of the card currently present on the reader."},
-    {NULL, NULL, 0, NULL}        /* Sentinel */
+    {NULL, NULL}
 };
 
-PyMODINIT_FUNC
-initnxppy(void)
-{
-    PyObject *m = Py_InitModule("nxppy", NxppyMethods);
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "nxppy",
+    NULL,
+    0,
+    nxppy_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
 
-    if (m == NULL)
-        return;
+#define INITERROR return NULL
+
+PyObject *
+PyInit_nxppy(void)
+
+#else
+#define INITERROR return
+
+void
+initnxppy(void)
+#endif
+{
+#if PY_MAJOR_VERSION >= 3
+    PyObject *module = PyModule_Create(&moduledef);
+#else
+    PyObject *module = Py_InitModule("nxppy", nxppy_methods);
+#endif
+
+    if (module == NULL)
+        INITERROR;
+
+#if PY_MAJOR_VERSION >= 3
+    return module;
+#endif
 }
