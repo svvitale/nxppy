@@ -30,9 +30,19 @@ nxppy = Extension('nxppy',
                     extra_link_args=['NxpRdLib_PublicRelease/build/libnxprd.a']
 )
 
+try:
+    import pypandoc
+    description = pypandoc.convert('README.md', 'rst')
+except (IOError, ImportError):
+    description = open('README.md').read()
+
 setup (name = 'nxppy',
        version = '1.0',
        description = 'A python extension for interfacing with the NXP PN512 NFC Reader. Targeted specifically for Raspberry Pi and the EXPLORE-NFC module',
+       long_description = description,
+       author = 'Scott Vitale',
+       author_email = 'svvitale@gmail.com',
+       url = 'http://github.com/svvitale/nxppy',
        test_suite = 'nose.collector',
        setup_requires=['nose>=1.0'],
        ext_modules = [nxppy],
