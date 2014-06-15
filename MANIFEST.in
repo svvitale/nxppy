@@ -1,1 +1,3 @@
+include *.c
+include *.h
 recursive-include NxpRdLib_PublicRelease *
