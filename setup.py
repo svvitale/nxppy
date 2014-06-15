@@ -30,16 +30,18 @@ nxppy = Extension('nxppy',
                     extra_link_args=['NxpRdLib_PublicRelease/build/libnxprd.a']
 )
 
+short_description = 'A python extension for interfacing with the NXP PN512 NFC Reader. Targeted specifically for Raspberry Pi and the EXPLORE-NFC module'
+
 try:
     import pypandoc
-    description = pypandoc.convert('README.md', 'rst')
+    long_description = pypandoc.convert('README.md', 'rst')
 except:
-    description = open('README.md').read()
+    long_description = short_description
 
 setup (name = 'nxppy',
        version = '1.0',
-       description = 'A python extension for interfacing with the NXP PN512 NFC Reader. Targeted specifically for Raspberry Pi and the EXPLORE-NFC module',
-       long_description = description,
+       description = short_description, 
+       long_description = long_description,
        author = 'Scott Vitale',
        author_email = 'svvitale@gmail.com',
        url = 'http://github.com/svvitale/nxppy',
