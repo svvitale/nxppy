@@ -5,15 +5,18 @@ _either_or_map = dict()
 
 def either_or(key='default', expected_failures=1):
     def either_or_decorator(test):
-        if not key in TestDecorator._either_or_map:
-            TestDecorator._either_or_map[key] = {
+        
+        global _either_or_map
+
+        if not key in _either_or_map:
+            _either_or_map[key] = {
                 'passed': 0,
                 'failed': 0,
                 'total': 0,
                 'run': 0
             }
 
-        metrics = TestDecorator._either_or_map[key]
+        metrics = _either_or_map[key]
         metrics['total'] += 1
 
         @functools.wraps(test)
