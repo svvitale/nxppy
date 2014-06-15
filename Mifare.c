@@ -103,7 +103,7 @@ uint32_t DetectMifare(void *halReader, uint8_t uid[], uint8_t *uidLength)
     status = phpalI14443p3a_ActivateCard(&I14443p3a,
         NULL, 0x00, uid, uidLength, bSak, &bMoreCardsAvailable);
 
-    return 0xFFFF;
+    return status;
 }
 
 phStatus_t readerIC_Cmd_SoftReset(phhalHw_Rc523_DataParams_t *halReader)
