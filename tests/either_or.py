@@ -10,7 +10,6 @@ def either_or(key='default', expected_failures=1):
 
         if not key in _either_or_map:
             _either_or_map[key] = {
-                'passed': 0,
                 'failed': 0,
                 'total': 0,
                 'run': 0
@@ -27,8 +26,6 @@ def either_or(key='default', expected_failures=1):
             except Exception:
                 metrics['failed'] += 1
                 raise nose.SkipTest
-            else:
-                metrics['passed'] += 1
             finally:
                 if metrics['run'] == metrics['total']:
                     if metrics['failed'] > expected_failures:
