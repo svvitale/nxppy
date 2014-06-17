@@ -10,21 +10,21 @@ static uint8_t initialized = false;
 
 static PyObject *nxppy_read_mifare(PyObject *self, PyObject *args)
 {
+    uint8_t byteBufferSize = UID_BUFFER_SIZE;
+    uint8_t byteBuffer[UID_BUFFER_SIZE];
+    char asciiBuffer[UID_ASCII_BUFFER_SIZE];
+
     if (!initialized) {
         init(&balReader, &hal);
         initialized = true;
     }
 
-    uint8_t byteBufferSize = UID_BUFFER_SIZE;
-    uint8_t byteBuffer[UID_BUFFER_SIZE];
-
-    char asciiBuffer[UID_ASCII_BUFFER_SIZE];
-
     if (DetectMifare(&hal, byteBuffer, &byteBufferSize) == 0) {
+        
+        uint8_t i;
+        
         /* reset the IC  */
         readerIC_Cmd_SoftReset(&hal);
-
-        uint8_t i;
 
         if (byteBufferSize + 1 > UID_ASCII_BUFFER_SIZE) {
             // Truncate if we got back too much data
