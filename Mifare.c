@@ -1,6 +1,6 @@
 #include "Mifare.h"
 
-int init(phbalReg_R_Pi_spi_DataParams_t *balReader, phhalHw_Rc523_DataParams_t *pHal) {
+phStatus_t init_nxp(phbalReg_R_Pi_spi_DataParams_t *balReader, phhalHw_Rc523_DataParams_t *pHal) {
 
     phStatus_t status;
 
@@ -11,14 +11,14 @@ int init(phbalReg_R_Pi_spi_DataParams_t *balReader, phhalHw_Rc523_DataParams_t *
     if (PH_ERR_SUCCESS != status)
     {
         printf("Failed to initialize SPI\n");
-        return 1;
+        return status;
     }
 
     status = phbalReg_OpenPort((void*)balReader);
     if (PH_ERR_SUCCESS != status)
     {
         printf("Failed to open bal\n");
-        return 2;
+        return status;
     }
 
     /* we have a board with PN512,
@@ -36,7 +36,7 @@ int init(phbalReg_R_Pi_spi_DataParams_t *balReader, phhalHw_Rc523_DataParams_t *
     if (PH_ERR_SUCCESS != status)
     {
         printf("Failed to initialize the HAL\n");
-        return 3;
+        return status;
     }
 
     /* Set the HAL configuration to SPI */
@@ -45,24 +45,125 @@ int init(phbalReg_R_Pi_spi_DataParams_t *balReader, phhalHw_Rc523_DataParams_t *
     if (PH_ERR_SUCCESS != status)
     {
         printf("Failed to set hal connection SPI\n");
-        return 4;
+        return status;
     }
 
+    return PH_ERR_SUCCESS;
+}
+
+phStatus_t init_mifare_interfaces(  phhalHw_Rc523_DataParams_t *halReader,
+                                    phpalI14443p4_Sw_DataParams_t *I14443p4, 
+                                    phpalMifare_Sw_DataParams_t *palMifare, 
+                                    phpalI14443p3a_Sw_DataParams_t *I14443p3a, 
+                                    phalMful_Sw_DataParams_t *alMful ) 
+{
+    phStatus_t status;
+
+    /* Initialize the 14443-3A PAL (Protocol Abstraction Layer) component */
+    PH_CHECK_SUCCESS_FCT(status, phpalI14443p3a_Sw_Init(I14443p3a,
+        sizeof(phpalI14443p3a_Sw_DataParams_t), halReader));
+
+    /* Initialize the 14443-4 PAL component */
+    PH_CHECK_SUCCESS_FCT(status, phpalI14443p4_Sw_Init(I14443p4,
+        sizeof(phpalI14443p4_Sw_DataParams_t), halReader));
+
+    /* Initialize the Mifare PAL component */
+    PH_CHECK_SUCCESS_FCT(status, phpalMifare_Sw_Init(palMifare,
+        sizeof(phpalMifare_Sw_DataParams_t), halReader, I14443p4));
+
+    /* Initialize Ultralight(-C) AL component */
+    PH_CHECK_SUCCESS_FCT(status, phalMful_Sw_Init(alMful,
+        sizeof(phalMful_Sw_DataParams_t), palMifare, NULL, NULL, NULL));
+
+    return status;
+}
+
+int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds) {
+    init_nxp(&self->balReader, &self->hal);
+    init_mifare_interfaces(&self->hal, &self->I14443p4, &self->palMifare, &self->I14443p3a, &self->alMful);
     return 0;
 }
 
-uint32_t DetectMifare(void *halReader, uint8_t uid[], uint8_t *uidLength)
+phStatus_t Mifare_activate_card(phpalI14443p3a_Sw_DataParams_t *I14443p3a, uint8_t byteBuffer[], uint8_t *byteBufferSize)
 {
+    // This is done in a separate function because the ActivateCard call from the library appears to corrupt the stack.
+    // Subsequent calls to sprintf result in a segmentation fault and crash.  So we isolate the call here (which seems to resolve the issue).
+    uint8_t bSak;
+    uint8_t bMoreCardsAvailable;
+
+    /* Activate the communication layer part 3
+    * of the ISO 14443A standard. */
+    return phpalI14443p3a_ActivateCard(I14443p3a,
+        NULL, 0x00, byteBuffer, byteBufferSize, &bSak, &bMoreCardsAvailable);
+}
+
+PyObject *Mifare_select(Mifare *self)
+{
+    uint8_t byteBufferSize = UID_BUFFER_SIZE;
+    uint8_t byteBuffer[UID_BUFFER_SIZE];
+
+    uint8_t pAtqa[2];
+    phStatus_t status;
+
+    /* reset the IC  */
+    phhalHw_Rc523_Cmd_SoftReset(&self->hal);
+
+    /* Reset the RF field */
+    if ((status = phhalHw_FieldReset(&self->hal)) != PH_ERR_SUCCESS) {
+        // TODO raise exception
+        Py_RETURN_NONE;
+    }
+
+    /* Apply the type A protocol settings
+    * and activate the RF field. */
+    if ((status = phhalHw_ApplyProtocolSettings(&self->hal, PHHAL_HW_CARDTYPE_ISO14443A)) != PH_ERR_SUCCESS) {
+        // TODO raise exception
+        Py_RETURN_NONE;
+    }
+
+    /* Empty the pAtqa */
+    memset(pAtqa, '\0', 2);
+
+    if ((status = phpalI14443p3a_RequestA(&self->I14443p3a, pAtqa)) != PH_ERR_SUCCESS) {
+        // TODO raise exception
+        Py_RETURN_NONE;
+    }
+
+    /* Reset the RF field */
+    if ((status = phhalHw_FieldReset(&self->hal)) != PH_ERR_SUCCESS) {
+        // TODO raise exception
+        Py_RETURN_NONE;
+    }
+
+    if (Mifare_activate_card(&self->I14443p3a, byteBuffer, &byteBufferSize) == PH_ERR_SUCCESS) {
+        // Card is present, return it as a python object.
+        uint8_t i;
+        char asciiBuffer[UID_ASCII_BUFFER_SIZE];
+
+        if (byteBufferSize + 1 > UID_ASCII_BUFFER_SIZE) {
+            // Truncate if we got back too much data
+            byteBufferSize = UID_ASCII_BUFFER_SIZE - 1;
+        }
+
+        for (i = 0; i < byteBufferSize; i++) {
+            sprintf(&asciiBuffer[2 * i], "%02X", byteBuffer[i]);
+        }
+
+        return PyUnicode_FromString(asciiBuffer);
+    }
+
+    Py_RETURN_NONE;
+}
+
+phStatus_t Mifare_read(void *halReader, uint8_t blockIdx, uint8_t data[]) {
+
+    phStatus_t status;
+
     phpalI14443p4_Sw_DataParams_t I14443p4;
     phpalMifare_Sw_DataParams_t palMifare;
     phpalI14443p3a_Sw_DataParams_t I14443p3a;
 
     phalMful_Sw_DataParams_t alMful;
-
-    uint8_t bMoreCardsAvailable;
-    uint8_t pAtqa[2];
-    uint8_t bSak[1];
-    phStatus_t status;
 
     /* Initialize the 14443-3A PAL (Protocol Abstraction Layer) component */
     PH_CHECK_SUCCESS_FCT(status, phpalI14443p3a_Sw_Init(&I14443p3a,
@@ -80,42 +181,126 @@ uint32_t DetectMifare(void *halReader, uint8_t uid[], uint8_t *uidLength)
     PH_CHECK_SUCCESS_FCT(status, phalMful_Sw_Init(&alMful,
         sizeof(phalMful_Sw_DataParams_t), &palMifare, NULL, NULL, NULL));
 
-    /* Reset the RF field */
-    PH_CHECK_SUCCESS_FCT(status, phhalHw_FieldReset(halReader));
-
-    /* Apply the type A protocol settings
-    * and activate the RF field. */
-    PH_CHECK_SUCCESS_FCT(status,
-        phhalHw_ApplyProtocolSettings(halReader, PHHAL_HW_CARDTYPE_ISO14443A));
-
-    /* Empty the pAtqa */
-    memset(pAtqa, '\0', 2);
-    status = phpalI14443p3a_RequestA(&I14443p3a, pAtqa);
-
-    /* Reset the RF field */
-    PH_CHECK_SUCCESS_FCT(status, phhalHw_FieldReset(halReader));
-
-    /* Empty the bSak */
-    memset(bSak, '\0', 1);
-
-    /* Activate the communication layer part 3
-    * of the ISO 14443A standard. */
-    status = phpalI14443p3a_ActivateCard(&I14443p3a,
-        NULL, 0x00, uid, uidLength, bSak, &bMoreCardsAvailable);
-
-    return status;
+    return phalMful_Read(&alMful, blockIdx, data);
 }
 
-phStatus_t readerIC_Cmd_SoftReset(phhalHw_Rc523_DataParams_t *halReader)
+PyObject *Mifare_read_block(Mifare *self, PyObject *args)
 {
-    phStatus_t status = PH_ERR_INVALID_DATA_PARAMS;
+    const size_t bufferSize = PHAL_MFUL_READ_BLOCK_LENGTH;
+    uint8_t data[bufferSize];
+    uint8_t blockIdx;
+    phStatus_t status;
 
-    switch (PH_GET_COMPID(halReader))
-    {
-    case PHHAL_HW_RC523_ID:
-        status = phhalHw_Rc523_Cmd_SoftReset(halReader);
-        break;
+    if (!PyArg_ParseTuple(args, "b", &blockIdx)) {
+        return NULL;
     }
 
-    return status;
+    status = Mifare_read(&self->hal, blockIdx, data);
+
+    if (status != PH_ERR_SUCCESS) {
+        // TODO raise exception
+        printf("Error\n");
+        Py_RETURN_NONE;
+    }
+
+    return Py_BuildValue("y#", data, bufferSize);
 }
+
+phStatus_t Mifare_write(void *halReader, uint8_t blockIdx, uint8_t data[]) {
+
+    phStatus_t status;
+
+    phpalI14443p4_Sw_DataParams_t I14443p4;
+    phpalMifare_Sw_DataParams_t palMifare;
+    phpalI14443p3a_Sw_DataParams_t I14443p3a;
+
+    phalMful_Sw_DataParams_t alMful;
+
+    /* Initialize the 14443-3A PAL (Protocol Abstraction Layer) component */
+    PH_CHECK_SUCCESS_FCT(status, phpalI14443p3a_Sw_Init(&I14443p3a,
+        sizeof(phpalI14443p3a_Sw_DataParams_t), halReader));
+
+    /* Initialize the 14443-4 PAL component */
+    PH_CHECK_SUCCESS_FCT(status, phpalI14443p4_Sw_Init(&I14443p4,
+        sizeof(phpalI14443p4_Sw_DataParams_t), halReader));
+
+    /* Initialize the Mifare PAL component */
+    PH_CHECK_SUCCESS_FCT(status, phpalMifare_Sw_Init(&palMifare,
+        sizeof(phpalMifare_Sw_DataParams_t), halReader, &I14443p4));
+
+    /* Initialize Ultralight(-C) AL component */
+    PH_CHECK_SUCCESS_FCT(status, phalMful_Sw_Init(&alMful,
+        sizeof(phalMful_Sw_DataParams_t), &palMifare, NULL, NULL, NULL));
+
+    return phalMful_Write(&alMful, blockIdx, data);
+}
+
+PyObject *Mifare_write_block(Mifare *self, PyObject *args)
+{
+    uint16_t status;
+    uint8_t blockIdx;
+    uint8_t *data;
+    int dataLen;
+
+    if (!PyArg_ParseTuple(args, "by#", &blockIdx, &data, &dataLen)) {
+        return NULL;
+    }
+
+    if ((status = Mifare_write(&self->hal, blockIdx, data)) != 0) {
+        // TODO raise exception
+        printf("Write failed [0x%04X]\n", status);
+    }
+
+    Py_RETURN_NONE;
+}
+
+/***********************************
+** Python Type Definiton
+***********************************/
+PyMethodDef Mifare_methods[] = {
+    {"select", (PyCFunction) Mifare_select, METH_NOARGS, "Select a Mifare card if present. Returns the card UID"},
+    {"read_block", (PyCFunction) Mifare_read_block, METH_VARARGS, "Read 16 bytes starting at the specified block."},
+    {"write_block", (PyCFunction) Mifare_write_block, METH_VARARGS, "Write 4 bytes starting at the specified block."},
+    {NULL}  /* Sentinel */
+};
+
+PyTypeObject MifareType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "nxppy.Mifare",             /* tp_name */
+    sizeof(Mifare), /* tp_basicsize */
+    0,                         /* tp_itemsize */
+    0,                         /* tp_dealloc */
+    0,                         /* tp_print */
+    0,                         /* tp_getattr */
+    0,                         /* tp_setattr */
+    0,                         /* tp_reserved */
+    0,                         /* tp_repr */
+    0,                         /* tp_as_number */
+    0,                         /* tp_as_sequence */
+    0,                         /* tp_as_mapping */
+    0,                         /* tp_hash  */
+    0,                         /* tp_call */
+    0,                         /* tp_str */
+    0,                         /* tp_getattro */
+    0,                         /* tp_setattro */
+    0,                         /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,        /* tp_flags */
+    "Mifare objects",          /* tp_doc */
+    0,                         /* tp_traverse */
+    0,                         /* tp_clear */
+    0,                         /* tp_richcompare */
+    0,                         /* tp_weaklistoffset */
+    0,                         /* tp_iter */
+    0,                         /* tp_iternext */
+    Mifare_methods,            /* tp_methods */
+    0,                         /* tp_members */
+    0,                         /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)Mifare_init,      /* tp_init */
+};
+
+
