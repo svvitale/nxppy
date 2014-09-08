@@ -1,8 +1,8 @@
 nxppy
 =====
-nxppy is a *very* simple Python wrapper for interfacing with the excellent [NXP EXPLORE-NFC shield](http://uk.farnell.com/nxp-explore-nfc) for the [Raspberry Pi](http://www.raspberrypi.org/).  It takes NXP's Public Reader Library and provides a thin layer for detecting and reading the UID (unique identifier) of a Mifare RFID tag present on the reader.
+nxppy is a *very* simple Python wrapper for interfacing with the excellent [NXP EXPLORE-NFC shield](http://uk.farnell.com/nxp-explore-nfc) for the [Raspberry Pi](http://www.raspberrypi.org/).  It takes NXP's Public Reader Library and provides a thin layer for detecting a Mifare RFID tag, reading its UID (unique identifier), and reading/writing data from/to the user area.
 
-This was based very heavily on NXP's card_polling example code.  The example code was only reorganized to be more conducive as an interface.  NXP still retains full copyright and ownership of the example code.  nxppy.c and the relevant Python setup files are distributed under the MIT license.
+This was based very heavily on NXP's card_polling example code.  The example code was only reorganized to be more conducive as an interface.  NXP still retains full copyright and ownership of the example code.  All files outside of the NXP directory are distributed under the MIT license.
 
 Installation
 =====
@@ -22,11 +22,16 @@ python setup.py build install
 
 Usage
 =====
-Currently, the module supports one static method which returns either the UID as a string or None if no card is present:
+Currently, the module supports only Mifare cards:
 
 ```python
 import nxppy
-uid = nxppy.read_mifare()
+
+mifare = nxppy.Mifare()
+
+uid = mifare.select() # Select the first available tag and return the UID
+block10bytes = mifare.read_block(10) # Read 16 bytes starting from block 10 (each block is 4 bytes, so technically this reads blocks 10-13)
+mifare.write_block(10, b'abcd') # Write a single block of 4 bytes
 ```
 
 Feedback
