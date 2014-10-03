@@ -1,6 +1,11 @@
 #include <Python.h>
 #include "Mifare.h"
 
+PyObject *InitError;
+PyObject *SelectError;
+PyObject *ReadError;
+PyObject *WriteError;
+
 /*###########################################################
 # Python Extension definitions
 ###########################################################*/
@@ -47,6 +52,22 @@ initnxppy(void)
 
     Py_INCREF(&MifareType);
     PyModule_AddObject(module, "Mifare", (PyObject *)&MifareType);
+
+    InitError = PyErr_NewException("nxppy.InitError", NULL, NULL);
+    Py_INCREF(InitError);
+    PyModule_AddObject(module, "InitError", InitError);
+
+    SelectError = PyErr_NewException("nxppy.SelectError", NULL, NULL);
+    Py_INCREF(SelectError);
+    PyModule_AddObject(module, "SelectError", SelectError);
+
+    ReadError = PyErr_NewException("nxppy.ReadError", NULL, NULL);
+    Py_INCREF(ReadError);
+    PyModule_AddObject(module, "ReadError", ReadError);
+
+    WriteError = PyErr_NewException("nxppy.WriteError", NULL, NULL);
+    Py_INCREF(WriteError);
+    PyModule_AddObject(module, "WriteError", WriteError);
 
 #if PY_MAJOR_VERSION >= 3
     return module;
