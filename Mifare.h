@@ -65,19 +65,28 @@
 #define UID_ASCII_BUFFER_SIZE ((UID_BUFFER_SIZE * 2) + 1)
 
 typedef struct {
-    PyObject_HEAD
     phbalReg_R_Pi_spi_DataParams_t balReader;
     phhalHw_Rc523_DataParams_t hal;
     phpalI14443p4_Sw_DataParams_t I14443p4;
     phpalMifare_Sw_DataParams_t palMifare;
     phpalI14443p3a_Sw_DataParams_t I14443p3a;
     phalMful_Sw_DataParams_t alMful;
+} nfc_data;
+
+typedef struct {
+    PyObject_HEAD
+    nfc_data data; 
 } Mifare;
 
 int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds);
 PyObject *Mifare_select(Mifare *self);
 PyObject *Mifare_read_block(Mifare *self, PyObject *args);
 PyObject *Mifare_write_block(Mifare *self, PyObject *args);
+
+extern PyObject *InitError;
+extern PyObject *SelectError;
+extern PyObject *ReadError;
+extern PyObject *WriteError;
 
 extern PyMethodDef Mifare_methods[];
 extern PyTypeObject MifareType;
