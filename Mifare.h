@@ -20,6 +20,7 @@
 *
 *******************************************************************************/
 
+#include <Python.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -58,8 +59,6 @@
 #include <phpalSli15693_Sw.h>
 #include <phpalFelica.h>
 #include <phpalI14443p3b.h>
-
-#include <Python.h>
 
 #define UID_BUFFER_SIZE 20
 #define UID_ASCII_BUFFER_SIZE ((UID_BUFFER_SIZE * 2) + 1)
