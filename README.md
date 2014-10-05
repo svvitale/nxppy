@@ -4,6 +4,15 @@ nxppy is a *very* simple Python wrapper for interfacing with the excellent [NXP 
 
 This was based very heavily on NXP's card_polling example code.  The example code was only reorganized to be more conducive as an interface.  NXP still retains full copyright and ownership of the example code.  All files outside of the NXP directory are distributed under the MIT license.
 
+Requirements
+=====
+You'll need to run these commands and install these packages to build nxppy:
+
+```
+sudo apt-get install python-dev
+sudo apt-get install cmake
+```
+
 Installation
 =====
 nxppy is available from pypi.  Simply run:
