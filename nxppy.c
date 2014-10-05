@@ -30,6 +30,10 @@ PyInit_nxppy(void)
 #else
 #define INITERROR return
 
+PyMethodDef nxppy_methods[] = {
+  {NULL, NULL},
+};
+
 void
 initnxppy(void)
 #endif
@@ -38,7 +42,11 @@ initnxppy(void)
 
     MifareType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&MifareType) < 0) {
+#if PY_MAJOR_VERSION >= 3
         return NULL;
+#else
+	return;
+#endif
     }
 
 #if PY_MAJOR_VERSION >= 3
