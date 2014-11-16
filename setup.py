@@ -39,7 +39,7 @@ except:
     long_description = short_description
 
 setup (name = 'nxppy',
-       version = '1.1',
+       version = '1.2',
        description = short_description, 
        long_description = long_description,
        author = 'Scott Vitale',
