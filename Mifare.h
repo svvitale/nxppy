@@ -70,6 +70,7 @@ typedef struct {
     phpalMifare_Sw_DataParams_t palMifare;
     phpalI14443p3a_Sw_DataParams_t I14443p3a;
     phalMful_Sw_DataParams_t alMful;
+    uint8_t bHalBufferReader[0x40];
 } nfc_data;
 
 typedef struct {
