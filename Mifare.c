@@ -3,7 +3,6 @@
 int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds) {
 
     phStatus_t status;
-    uint8_t bHalBufferReader[0x40];
 
     /* Initialize the Reader BAL (Bus Abstraction Layer) component */
     status = phbalReg_R_Pi_spi_Init(&self->data.balReader, sizeof(phbalReg_R_Pi_spi_DataParams_t));
@@ -27,10 +26,10 @@ int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds) {
         sizeof(phhalHw_Rc523_DataParams_t),
         &self->data.balReader,
         0,
-        bHalBufferReader,
-        sizeof(bHalBufferReader),
-        bHalBufferReader,
-        sizeof(bHalBufferReader));
+        &self->data.bHalBufferReader[0],
+        sizeof(self->data.bHalBufferReader),
+        &self->data.bHalBufferReader[0],
+        sizeof(self->data.bHalBufferReader));
 
     if (PH_ERR_SUCCESS != status)
     {
@@ -68,8 +67,6 @@ int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds) {
 
 phStatus_t Mifare_activate_card(phpalI14443p3a_Sw_DataParams_t *I14443p3a, uint8_t byteBuffer[], uint8_t *byteBufferSize)
 {
-    // This is done in a separate function because the ActivateCard call from the library appears to corrupt the stack.
-    // Subsequent calls to sprintf result in a segmentation fault and crash.  So we isolate the call here (which seems to resolve the issue).
     uint8_t bSak;
     uint8_t bMoreCardsAvailable;
 
@@ -86,6 +83,9 @@ PyObject *Mifare_select(Mifare *self)
 
     uint8_t pAtqa[2];
     phStatus_t status;
+
+    uint8_t bSak;
+    uint8_t bMoreCardsAvailable;
 
     /* reset the IC  */
     phhalHw_Rc523_Cmd_SoftReset(&self->data.hal);
@@ -112,8 +112,8 @@ PyObject *Mifare_select(Mifare *self)
     if ((status = phhalHw_FieldReset(&self->data.hal)) != PH_ERR_SUCCESS) {
         return PyErr_Format(SelectError, "FieldReset command failed: %04x", status);
     }
-
-    if (Mifare_activate_card(&self->data.I14443p3a, byteBuffer, &byteBufferSize) == PH_ERR_SUCCESS) {
+    /* Activate the communication layer part 3 of the ISO 14443A standard. */
+    if ( phpalI14443p3a_ActivateCard(&self->data.I14443p3a, NULL, 0x00, byteBuffer, &byteBufferSize, &bSak, &bMoreCardsAvailable) == PH_ERR_SUCCESS) {
         // Card is present, return it as a python object.
         uint8_t i;
         char asciiBuffer[UID_ASCII_BUFFER_SIZE];
@@ -133,12 +133,6 @@ PyObject *Mifare_select(Mifare *self)
     Py_RETURN_NONE;
 }
 
-phStatus_t Mifare_read(Mifare *self, uint8_t blockIdx, uint8_t data[]) {
-    // This is done in a separate function because the phalMful_Read call from the library appears to corrupt the stack.
-    // Result is a segmentation fault and crash.  So we isolate the call here (which seems to resolve the issue).
-    return phalMful_Read(&self->data.alMful, blockIdx, data);
-}
-
 PyObject *Mifare_read_block(Mifare *self, PyObject *args)
 {
     const size_t bufferSize = PHAL_MFUL_READ_BLOCK_LENGTH;
@@ -150,13 +144,17 @@ PyObject *Mifare_read_block(Mifare *self, PyObject *args)
         return NULL;
     }
 
-    status = Mifare_read(self, blockIdx, data);
+    status = phalMful_Read(&self->data.alMful, blockIdx, data);
 
     if (status != PH_ERR_SUCCESS) {
         return PyErr_Format(ReadError, "Read failed: %04x", status);
     }
 
+#if PY_MAJOR_VERSION >= 3
     return Py_BuildValue("y#", data, bufferSize);
+#else
+    return Py_BuildValue("s#", data, bufferSize);
+#endif
 }
 
 PyObject *Mifare_write_block(Mifare *self, PyObject *args)
@@ -166,7 +164,11 @@ PyObject *Mifare_write_block(Mifare *self, PyObject *args)
     uint8_t *data;
     int dataLen;
 
+#if PY_MAJOR_VERSION >= 3
     if (!PyArg_ParseTuple(args, "by#", &blockIdx, &data, &dataLen)) {
+#else
+    if (!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
+#endif
         return NULL;
     }
 
