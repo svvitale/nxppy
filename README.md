@@ -9,7 +9,7 @@ Requirements
 You'll need to run these commands and install these packages to build nxppy:
 
 ```
-sudo apt-get install python-dev
+sudo apt-get install python2.7-dev
 sudo apt-get install cmake
 ```
 
