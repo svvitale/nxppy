@@ -17,12 +17,14 @@ sudo apt-get install python2.7-dev
 sudo apt-get install cmake
 ```
 
+The NXP-EXPLORE card relies on SPI being enabled.  The setup script below will automatically enable it and load the kernel module if it's not enabled/loaded already.
+
 Installation
 =====
 nxppy is available from pypi.  Simply run:
 
 ```
-pip install nxppy
+sudo pip install nxppy
 ```
 
 Source
