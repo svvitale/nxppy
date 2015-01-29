@@ -13,6 +13,8 @@ class build_nxppy(build):
         os.chdir( os.path.join('NxpRdLib_PublicRelease', 'build') )
 
         def compile():
+            call( r"sed -i 's/^blacklist spi-bcm2708/#&/' /etc/modprobe.d/raspi-blacklist.conf", shell=True )
+            call( 'modprobe spi-bcm2708', shell=True )
             call( 'cmake .', shell=True )
             call( 'make', shell=True )
 
@@ -39,7 +41,7 @@ except:
     long_description = short_description
 
 setup (name = 'nxppy',
-       version = '1.2',
+       version = '1.2.1',
        description = short_description, 
        long_description = long_description,
        author = 'Scott Vitale',
