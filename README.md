@@ -56,6 +56,26 @@ block10bytes = mifare.read_block(10)
 mifare.write_block(10, b'abcd')
 ```
 
+Polling example, equivalent to NXP's card_polling example:
+
+```python
+import nxppy
+import time
+
+mifare = nxppy.Mifare()
+
+# Print card UIDs as they are detected
+while True:
+    try:
+        uid = mifare.select()
+        print(uid)
+    except nxppy.SelectError:
+        # SelectError is raised if no card is in the field.
+        pass
+        
+    time.sleep(1)
+```
+
 Feedback
 =====
 I welcome your feedback and pull requests!  This project started as a necessity for my own Raspberry Pi development, but I'm hoping others will find it useful as a way to quickly bootstrap NFC-based projects.  Enjoy!
