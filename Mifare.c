@@ -5,7 +5,7 @@ int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds) {
     phStatus_t status;
 
     /* Initialize the Reader BAL (Bus Abstraction Layer) component */
-    status = phbalReg_R_Pi_spi_Init(&self->data.balReader, sizeof(phbalReg_R_Pi_spi_DataParams_t));
+    status = phbalReg_RpiSpi_Init(&self->data.balReader, sizeof(phbalReg_RpiSpi_DataParams_t));
     if (PH_ERR_SUCCESS != status)
     {
         PyErr_Format(InitError, "SPI Init failed: %04x", status);

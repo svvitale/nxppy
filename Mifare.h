@@ -32,6 +32,8 @@
 /* Status code definitions */
 #include <ph_Status.h>
 
+#include <phbalReg_RpiSpi.h>
+
 /* Reader Library Headers */
 /* Generic ISO14443-3A Component of
  * Reader Library Framework */
@@ -55,8 +57,6 @@
  * Ultralight-C cards. */
 #include <phKeyStore.h>
 
-#include <phpalSli15693.h>
-#include <phpalSli15693_Sw.h>
 #include <phpalFelica.h>
 #include <phpalI14443p3b.h>
 
@@ -64,7 +64,7 @@
 #define UID_ASCII_BUFFER_SIZE ((UID_BUFFER_SIZE * 2) + 1)
 
 typedef struct {
-    phbalReg_R_Pi_spi_DataParams_t balReader;
+    phbalReg_RpiSpi_DataParams_t balReader;
     phhalHw_Rc523_DataParams_t hal;
     phpalI14443p4_Sw_DataParams_t I14443p4;
     phpalMifare_Sw_DataParams_t palMifare;
