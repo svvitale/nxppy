@@ -1,8 +1,8 @@
 nxppy
 =====
-nxppy is a *very* simple Python wrapper for interfacing with the excellent [NXP EXPLORE-NFC shield](http://uk.farnell.com/nxp-explore-nfc) for the [Raspberry Pi](http://www.raspberrypi.org/).  It takes NXP's Public Reader Library and provides a thin layer for detecting a Mifare RFID tag, reading its UID (unique identifier), and reading/writing data from/to the user area.
+nxppy is a *very* simple Python wrapper for interfacing with the excellent [NXP EXPLORE-NFC shield](http://uk.farnell.com/nxp-explore-nfc) for the [Raspberry Pi](http://www.raspberrypi.org/).  It takes NXP's Reader Library and provides a thin layer for detecting a Mifare RFID tag, reading its UID (unique identifier), and reading/writing data from/to the user area.
 
-This was based very heavily on NXP's card_polling example code.  The example code was only reorganized to be more conducive as an interface.  NXP still retains full copyright and ownership of the example code.  All files outside of the NXP directory are distributed under the MIT license.
+This was based very heavily on NXP's card_polling example code.  The example code was only reorganized to be more conducive as an interface.  NXP still retains full copyright and ownership of the example code.  All files in this repository are distributed under the MIT license.
 
 Compatibility
 =====
@@ -10,22 +10,24 @@ Tested with both Python 2.7 (as installed on Raspberry Pi) and with a manually c
 
 Requirements
 =====
-You'll need to run these commands and install these packages to build nxppy:
-
-```
-sudo apt-get install python2.7-dev
-sudo apt-get install cmake
-```
-
-The NXP-EXPLORE card relies on SPI being enabled.  The setup script will automatically enable it and load the kernel module if it's not enabled/loaded already.
+The NXP-EXPLORE card relies on SPI being enabled.  Please enable SPI using raspi-config prior to installing nxppy.
 
 Installation
 =====
-nxppy is available from pypi.  Simply run:
+nxppy is available from pypi.  First, install pip if you don't have it already:
+
+```
+wget https://bootstrap.pypa.io/get-pip.py
+sudo python get-pip.py
+```
+
+Then simply run:
 
 ```
 sudo pip install nxppy
 ```
+
+Installation will take some time as it automatically pulls down and builds NeardAL, WiringPi, and the NXP Reader Library from souce.
 
 Source
 =====
