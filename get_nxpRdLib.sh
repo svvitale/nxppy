@@ -48,8 +48,9 @@ nxp() {
   echo -e "[${blue}Downloading NXP Reader Library${NC}]"
   wget http://www.nxp.com/redirect/explore-nfc-dev_latest -O nxp.zip
   unzip -o nxp.zip
-  tar --overwrite -xzf neard-explorenfc_0.1.orig.tar.gz
-  cd neard-explorenfc-0.1
+
+  tar --overwrite -xzf neard-explorenfc_*.orig.tar.gz
+  cd neard-explorenfc-*
 
   export WIRINGPI_CFLAGS=-I/usr/local/include
   export WIRINGPI_LIBS=-L/usr/local/lib\ -lwiringPi
