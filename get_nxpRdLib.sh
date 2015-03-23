@@ -11,14 +11,11 @@ prereq() {
 
 neardal() {
   echo -e "[${blue}Downloading NeardAL${NC}]"
-  curl -L https://github.com/connectivity/neardal/archive/0.14.tar.gz | tar --overwrite -xz
-  cd neardal-0.14
+  git clone https://github.com/svvitale/neardal
+  cd neardal
 
   echo -e "[${blue}Running autogen.sh${NC}]"
   ./autogen.sh
-
-  echo -e "[${blue}Configuring NeardAL${NC}]"
-  ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
 
   echo -e "[${blue}Building NeardAL${NC}]"
   make
