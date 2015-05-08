@@ -4,6 +4,7 @@ from distutils.command.build import build
 import os
 from subprocess import call
 import multiprocessing
+from glob import glob
 
 class build_nxppy(build):
     def run(self):
@@ -15,12 +16,14 @@ class build_nxppy(build):
         # Run the rest of the build
         build.run(self)
 
+nxprdlib_dir = glob('neard-explorenfc-*/nxprdlib')[0]
+
 nxppy = Extension('nxppy',
                     sources = ['Mifare.c', 'nxppy.c'],
-                    include_dirs = ['neard-explorenfc-0.1/nxprdlib/types', 
-                                    'neard-explorenfc-0.1/nxprdlib/intfs'],
+                    include_dirs = [nxprdlib_dir + '/types', 
+                                    nxprdlib_dir + '/intfs'],
                     extra_compile_args=['-O1'],
-                    extra_link_args=['neard-explorenfc-0.1/nxprdlib/libnxprdlib.a', '-lwiringPi']
+                    extra_link_args=[nxprdlib_dir + '/libnxprdlib.a', '-lwiringPi']
 )
 
 short_description = 'A python extension for interfacing with the NXP PN512 NFC Reader. Targeted specifically for Raspberry Pi and the EXPLORE-NFC module'
@@ -32,7 +35,7 @@ except:
     long_description = short_description
 
 setup (name = 'nxppy',
-       version = '1.3.1',
+       version = '1.3.2',
        description = short_description, 
        long_description = long_description,
        author = 'Scott Vitale',
