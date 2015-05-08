@@ -6,25 +6,31 @@ from subprocess import call
 import multiprocessing
 from glob import glob
 
+nxppy = Extension('nxppy',
+                    sources = ['Mifare.c', 'nxppy.c'],
+                    extra_compile_args=['-O1'],
+                    extra_link_args=['-lwiringPi']
+)
+
 class build_nxppy(build):
     def run(self):
         def compile():
             call( './get_nxpRdLib.sh', shell=True )
 
+            # Find where neard-explorenfc was extracted
+            nxprdlib_dir = glob('neard-explorenfc-*/nxprdlib')[0]
+
+            # Add relevant include directories
+            nxppy.include_dirs.append(nxprdlib_dir + '/types')
+            nxppy.include_dirs.append(nxprdlib_dir + '/intfs')
+
+            # Add library reference
+            nxppy.extra_link_args.append(nxprdlib_dir + '/libnxprdlib.a')
+
         self.execute(compile, [], 'compiling NxpRdLib')
 
         # Run the rest of the build
         build.run(self)
-
-nxprdlib_dir = glob('neard-explorenfc-*/nxprdlib')[0]
-
-nxppy = Extension('nxppy',
-                    sources = ['Mifare.c', 'nxppy.c'],
-                    include_dirs = [nxprdlib_dir + '/types', 
-                                    nxprdlib_dir + '/intfs'],
-                    extra_compile_args=['-O1'],
-                    extra_link_args=[nxprdlib_dir + '/libnxprdlib.a', '-lwiringPi']
-)
 
 short_description = 'A python extension for interfacing with the NXP PN512 NFC Reader. Targeted specifically for Raspberry Pi and the EXPLORE-NFC module'
 
