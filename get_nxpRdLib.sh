@@ -63,11 +63,17 @@ nxp() {
   make
 }
 
+cleanup() {
+  cd ..
+  rm -rf *.zip *.gz *.deb
+}
+
 all() {
   prereq
   neardal
   wiringpi
   nxp
+  cleanup
 }
 
 if [[ $# -eq 0 ]]; then
