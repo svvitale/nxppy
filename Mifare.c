@@ -157,6 +157,27 @@ PyObject *Mifare_read_block(Mifare *self, PyObject *args)
 #endif
 }
 
+PyObject *Mifare_read_sign(Mifare *self)
+{
+    const size_t bufferSize = PHAL_MFUL_SIG_LENGTH;
+    uint8_t data[bufferSize];
+    uint8_t *sign = data;
+
+    phStatus_t status;
+
+    status = phalMful_ReadSign(&self->data.alMful, '\0', &sign);
+
+    if (status != PH_ERR_SUCCESS) {
+        return PyErr_Format(ReadError, "Read failed: %04x", status);
+    }
+
+#if PY_MAJOR_VERSION >= 3
+    return Py_BuildValue("y#", sign, bufferSize);
+#else
+    return Py_BuildValue("s#", sign, bufferSize);
+#endif
+}
+
 PyObject *Mifare_write_block(Mifare *self, PyObject *args)
 {
     uint16_t status;
@@ -185,6 +206,7 @@ PyObject *Mifare_write_block(Mifare *self, PyObject *args)
 PyMethodDef Mifare_methods[] = {
     {"select", (PyCFunction) Mifare_select, METH_NOARGS, "Select a Mifare card if present. Returns the card UID"},
     {"read_block", (PyCFunction) Mifare_read_block, METH_VARARGS, "Read 16 bytes starting at the specified block."},
+    {"read_sign", (PyCFunction) Mifare_read_sign, METH_NOARGS, "Read 32 bytes card manufacturer signature."},
     {"write_block", (PyCFunction) Mifare_write_block, METH_VARARGS, "Write 4 bytes starting at the specified block."},
     {NULL}  /* Sentinel */
 };

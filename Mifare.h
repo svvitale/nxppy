@@ -81,6 +81,7 @@ typedef struct {
 int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds);
 PyObject *Mifare_select(Mifare *self);
 PyObject *Mifare_read_block(Mifare *self, PyObject *args);
+PyObject *Mifare_read_sign(Mifare *self);
 PyObject *Mifare_write_block(Mifare *self, PyObject *args);
 
 extern PyObject *InitError;
