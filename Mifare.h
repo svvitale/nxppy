@@ -56,12 +56,12 @@
  * need it when using crypto with
  * Ultralight-C cards. */
 #include <phKeyStore.h>
-
 #include <phpalFelica.h>
 #include <phpalI14443p3b.h>
 
 #define UID_BUFFER_SIZE 20
 #define UID_ASCII_BUFFER_SIZE ((UID_BUFFER_SIZE * 2) + 1)
+#define MIFARECLASSIC_BUFFER_SIZE 16
 
 typedef struct {
     phbalReg_RpiSpi_DataParams_t balReader;
@@ -71,11 +71,16 @@ typedef struct {
     phpalI14443p3a_Sw_DataParams_t I14443p3a;
     phalMful_Sw_DataParams_t alMful;
     uint8_t bHalBufferReader[0x40];
+    phKeyStore_Sw_DataParams_t KeyStore;
+    phalMfc_Sw_DataParams_t palMifareClassic;
+    uint8_t Sak;
+    uint8_t *uid;
+    uint8_t uidSize;
 } nfc_data;
 
 typedef struct {
     PyObject_HEAD
-    nfc_data data; 
+    nfc_data data;
 } Mifare;
 
 int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds);
@@ -83,11 +88,14 @@ PyObject *Mifare_select(Mifare *self);
 PyObject *Mifare_read_block(Mifare *self, PyObject *args);
 PyObject *Mifare_read_sign(Mifare *self);
 PyObject *Mifare_write_block(Mifare *self, PyObject *args);
+PyObject *MifareClassic_Authenticate(Mifare *self, PyObject *args);
+PyObject *MifareClassic_read_block(Mifare *self, PyObject *args);
+PyObject *Mifare_get_type(Mifare * self);
+PyObject *MifareClassic_Write(Mifare *self, PyObject *args);
 
 extern PyObject *InitError;
 extern PyObject *SelectError;
 extern PyObject *ReadError;
 extern PyObject *WriteError;
-
 extern PyMethodDef Mifare_methods[];
 extern PyTypeObject MifareType;
