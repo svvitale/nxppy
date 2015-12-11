@@ -43,8 +43,8 @@ wiringpi() {
 
 nxp() {
   echo -e "[${blue}Downloading NXP Reader Library${NC}]"
-  wget http://www.nxp.com/redirect/explore-nfc-dev_latest -O nxp.zip
-  unzip -o nxp.zip
+  #wget http://www.nxp.com/redirect/explore-nfc-dev_latest -O nxp.zip
+  unzip -o SW282816.zip
 
   tar --overwrite -xzf neard-explorenfc_*.orig.tar.gz
   cd neard-explorenfc-*
