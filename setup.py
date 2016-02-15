@@ -25,7 +25,7 @@ class build_nxppy(build):
             nxppy.include_dirs.append(nxprdlib_dir + '/intfs')
 
             # Add library reference
-            nxppy.extra_link_args.append(nxprdlib_dir + '/libnxprdlib.a')
+            nxppy.extra_link_args.insert(0, nxprdlib_dir + '/libnxprdlib.a')
 
         self.execute(compile, [], 'compiling NxpRdLib')
 

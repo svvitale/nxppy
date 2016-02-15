@@ -49,7 +49,7 @@ nxp() {
   tar --overwrite -xzf neard-explorenfc_*.orig.tar.gz
   cd neard-explorenfc-*
 
-  export WIRINGPI_CFLAGS=-I/usr/local/include
+  export WIRINGPI_CFLAGS=-mword-relocations\ -I/usr/local/include
   export WIRINGPI_LIBS=-L/usr/local/lib\ -lwiringPi
 
   echo -e "[${blue}Running bootstrap${NC}]"
