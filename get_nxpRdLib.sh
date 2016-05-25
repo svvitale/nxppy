@@ -17,8 +17,8 @@ echo -e "[${blue}Downloading NXP Reader Library${NC}]"
   unzip -o nxp.zip
   value=$(cat licencefile.txt)
 value=$(cat licencefile.txt)
-if (whiptail --title "Do you accept Licence Agreement" --yesno --scrolltext "$value" 0 0) then
-	echo "Setup Continues"
+if (whiptail --title "Please read and accept the NXP NFC Reader Libary greement" --yesno --yes-button "accept" --no-button "reject" --scrolltext "$value" 0 0) then
+		echo "Setup Continues"
 else
 	echo "Setup Aborted because of Licence Agreement"
 	exit
@@ -26,7 +26,7 @@ fi
 
   cd build
   cmake ..
-  make
+  make -j4 NxpRdLibLinuxPN512
   cd ..
   OPT="" CFLAGS="-lpthread -lrt -std=gnu99" python wrapper.py build
   cp build/lib.linux-armv7l-2.7/nxppy.so nxppy.so
