@@ -255,12 +255,22 @@ phStatus_t NfcRdLibInit(void)
 }
 
 
-int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds) {
-
-	Set_Interface_Link();
+PyObject *Mifare_init(Mifare *self, PyObject *args, PyObject *kwds) {
+	
+	int ret;
+	ret = Set_Interface_Link();
+	if(ret != 0)
+	{
+		return PyErr_Format(ReadError, "Hardware Initialisaton failed: %04x", ret);
+	}
 	Reset_reader_device();
-	NfcRdLibInit();
-    return 0;
+
+	ret = NfcRdLibInit();
+		if(ret != 0)
+	{
+		return PyErr_Format(ReadError, "Hardware Initialisaton failed: %04x", ret);
+	}
+    Py_RETURN_NONE;
 }
 
 
