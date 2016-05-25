@@ -1,2 +1,2 @@
 from subprocess import call
-call( './get_nxpRdLib.sh', shell=True )
+call( '/bin/bash get_nxpRdLib.sh', shell=True )
