@@ -52,8 +52,6 @@
 
 #include <phacDiscLoop.h>
 
-/* Generic KeyStore Component of Reader Library Framework.*/
-#include <phKeyStore.h>
 
 /* Printf macro */
 
@@ -78,16 +76,7 @@
  * Component of Reader Library Framework */
 #include <phalMful.h>
 #include <phalMfc.h>
-/* Generic KeyStore Component of
- * Reader Library Framework */
-/* In that example we don't use any
- * key. But we need the key components
- * for some function calls and you maight
- * need it when using crypto with
- * Ultralight-C cards. */
-#include <phKeyStore.h>
 
-#include <phpalFelica.h>
 #include <phpalI14443p3b.h>
 
 #define UID_BUFFER_SIZE 20
