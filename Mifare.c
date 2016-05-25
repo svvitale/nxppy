@@ -1,67 +1,303 @@
 #include "Mifare.h"
+#ifdef   DEBUG
+#include <stdio.h>
+#define  DEBUG_FLUSH(x)      //{char buff[1]; buff[0] = x; __sys_write(0, buff, 1);}
+#else
+#define  DEBUG_FLUSH(x)
+#endif
 
-int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds) {
+#define NUMBER_OF_KEYENTRIES        2
+#define NUMBER_OF_KEYVERSIONPAIRS   2
+#define NUMBER_OF_KUCENTRIES        1
+
+#define DATA_BUFFER_LEN             16 /* Buffer length */
+#define MFC_BLOCK_DATA_SIZE         16 /* Block Data size - 16 Bytes */
+
+/*******************************************************************************
+**   Global Variable Declaration
+*******************************************************************************/
+phbalReg_Stub_DataParams_t         sBalReader;                 /* BAL component holder */
+
+    /*HAL variables*/
+phhalHw_Nfc_Ic_DataParams_t        sHal_Nfc_Ic;                /* HAL component holder for Nfc Ic's */
+void                              *pHal;                       /* HAL pointer */
+uint8_t                            bHalBufferTx[128];          /* HAL  TX buffer */
+uint8_t                            bHalBufferRx[128];          /* HAL  RX buffer */
+
+    /*PAL variables*/
+phpalI14443p3a_Sw_DataParams_t     spalI14443p3a;              /* PAL  I14443-A component */
+phpalI14443p4a_Sw_DataParams_t     spalI14443p4a;              /* PAL ISO I14443-4A component */
+phpalI14443p3b_Sw_DataParams_t     spalI14443p3b;              /* PAL ISO I14443-B component */
+phpalI14443p4_Sw_DataParams_t      spalI14443p4;               /* PAL ISO I14443-4 component */
+phpalMifare_Sw_DataParams_t        spalMifare;                 /* PAL  MIFARE component */
+
+phacDiscLoop_Sw_DataParams_t       sDiscLoop;                  /* Discovery loop component */
+phalMfc_Sw_DataParams_t            salMfc;                     /* MIFARE Classic parameter structure */
+
+phKeyStore_Sw_DataParams_t         sSwkeyStore;                /* Sw Key parameter structure */
+phKeyStore_Sw_KeyEntry_t           sKeyEntries[NUMBER_OF_KEYENTRIES];                                  /* Sw KeyEntry structure */
+phKeyStore_Sw_KUCEntry_t           sKUCEntries[NUMBER_OF_KUCENTRIES];                                  /* Sw Key usage counter structure */
+phKeyStore_Sw_KeyVersionPair_t     sKeyVersionPairs[NUMBER_OF_KEYVERSIONPAIRS * NUMBER_OF_KEYENTRIES]; /* Sw KeyVersionPair structure */
+
+uint8_t                            bDataBuffer[DATA_BUFFER_LEN];  /* universal data buffer */
+
+uint8_t                            bSak;                      /* SAK  card type information */
+uint16_t                           wAtqa;                     /* ATQA card type information */
+uint8_t 						blockcnt=0;
+
+/** General information bytes to be sent with ATR */
+const uint8_t GI[] = { 0x46,0x66,0x6D,
+                       0x01,0x01,0x10,       /*VERSION*/
+                       0x03,0x02,0x00,0x01,  /*WKS*/
+                       0x04,0x01,0xF1        /*LTO*/
+                      };
+
+static uint8_t    aData[50];              /* ATR response holder */
+
+/* Set the key for the MIFARE (R) Classic cards. */
+uint8_t Key[6] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
+
+/* Don't change the following line */
+uint8_t Original_Key[6] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
+
+/***********************************************************************************************
+ * \brief   Print a given array of integers on the console
+ * \param   *pBuff   Buffer Reference
+ * \param   size      data size to be print
+ **********************************************************************************************/
+#ifdef   DEBUG
+static void PRINT_BUFF(uint8_t *pBuff, uint8_t size)
+{
+    uint8_t bBufIdx;
+
+    for(bBufIdx = 0; bBufIdx < size; bBufIdx++)
+    {
+        DEBUG_PRINTF(" %02X",pBuff[bBufIdx]);
+    }
+}
+#else
+#define  PRINT_BUFF(x, y)
+#endif /* DEBUG */
+
+static phStatus_t LoadProfile(void)
+{
+    phStatus_t status = PH_ERR_SUCCESS;
+
+    sDiscLoop.pPal1443p3aDataParams  = &spalI14443p3a;
+	sDiscLoop.pPal1443p3bDataParams  = &spalI14443p3b;
+    sDiscLoop.pPal1443p4aDataParams  = &spalI14443p4a;
+    sDiscLoop.pPal14443p4DataParams  = &spalI14443p4;
+    sDiscLoop.pHalDataParams         = &sHal_Nfc_Ic.sHal;
+	
+	/* These lines are added just to SIGSEG fault when non 14443-3 card is detected */
+	/* Assign the GI for Type A */
+    sDiscLoop.sTypeATargetInfo.sTypeA_P2P.pGi       = (uint8_t *)GI;
+    sDiscLoop.sTypeATargetInfo.sTypeA_P2P.bGiLength = sizeof(GI);
+    /* Assign the GI for Type F */
+    sDiscLoop.sTypeFTargetInfo.sTypeF_P2P.pGi       = (uint8_t *)GI;
+    sDiscLoop.sTypeFTargetInfo.sTypeF_P2P.bGiLength = sizeof(GI);
+    /* Assign ATR response for Type A */
+    sDiscLoop.sTypeATargetInfo.sTypeA_P2P.pAtrRes   = aData;
+    /* Assign ATR response for Type F */
+    sDiscLoop.sTypeFTargetInfo.sTypeF_P2P.pAtrRes   = aData;
+    /* Assign ATS buffer for Type A */
+    sDiscLoop.sTypeATargetInfo.sTypeA_I3P4.pAts     = aData;
+	/* ******************************************************************************************** */	
+	
+    /* Passive Bailout bitmap configuration */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_BAIL_OUT, 0x00);
+    CHECK_STATUS(status);
+
+    /* Passive poll bitmap configuration. Poll for only Type A Tags. */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_PAS_POLL_TECH_CFG, PHAC_DISCLOOP_POS_BIT_MASK_A);
+    CHECK_STATUS(status);
+
+    /* Turn OFF Passive Listen. */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_PAS_LIS_TECH_CFG, 0x00);
+    CHECK_STATUS(status);
+
+    /* Turn OFF active listen. */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ACT_LIS_TECH_CFG, 0x00);
+    CHECK_STATUS(status);
+
+    /* Turn OFF Active Poll */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ACT_POLL_TECH_CFG, 0x00);
+    CHECK_STATUS(status);
+
+    /* Disable LPCD feature. */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ENABLE_LPCD, PH_OFF);
+    CHECK_STATUS(status);
+
+    /* reset collision Pending */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_COLLISION_PENDING, PH_OFF);
+    CHECK_STATUS(status);
+
+    /* whether anti-collision is supported or not. */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ANTI_COLL, PH_ON);
+    CHECK_STATUS(status);
+
+    /* Device limit for Type A */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_TYPEA_DEVICE_LIMIT, 1);
+    CHECK_STATUS(status);
+
+    /* Discovery loop Operation mode */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_OPE_MODE, RD_LIB_MODE_NFC);
+
+    /* Bailout on Type A detect */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_BAIL_OUT, PHAC_DISCLOOP_POS_BIT_MASK_A);
+    CHECK_SUCCESS(status);
+
+    /* Return Status */
+    return status;
+}
+
+phStatus_t NfcRdLibInit(void)
+{
 
     phStatus_t status;
 
     /* Initialize the Reader BAL (Bus Abstraction Layer) component */
-    status = phbalReg_RpiSpi_Init(&self->data.balReader, sizeof(phbalReg_RpiSpi_DataParams_t));
-    if (PH_ERR_SUCCESS != status)
-    {
-        PyErr_Format(InitError, "SPI Init failed: %04x", status);
-        return -1;
-    }
+    status = phbalReg_Stub_Init(&sBalReader, sizeof(phbalReg_Stub_DataParams_t));
+    CHECK_SUCCESS(status);
 
-    status = phbalReg_OpenPort(&self->data.balReader);
-    if (PH_ERR_SUCCESS != status)
-    {
-        PyErr_Format(InitError, "OpenPort failed: %04x", status);
-        return -1;
-    }
+    /* Initialize the OSAL Events. */
+    status = phOsal_Event_Init();
+    CHECK_STATUS(status);
 
-    /* we have a board with PN512,
-    * but on the software point of view,
-    * it's compatible to the RC523 */
-    status = phhalHw_Rc523_Init(&self->data.hal,
-        sizeof(phhalHw_Rc523_DataParams_t),
-        &self->data.balReader,
-        0,
-        &self->data.bHalBufferReader[0],
-        sizeof(self->data.bHalBufferReader),
-        &self->data.bHalBufferReader[0],
-        sizeof(self->data.bHalBufferReader));
+	//Start interrupt thread
+    Set_Interrupt();
 
-    if (PH_ERR_SUCCESS != status)
-    {
-        PyErr_Format(InitError, "Rc523_Init failed: %04x", status);
-        return -1;
-    }
+    /* Set HAL type in BAL */
+#ifdef NXPBUILD__PHHAL_HW_PN5180
+    status = phbalReg_SetConfig(
+        &sBalReader,
+        PHBAL_REG_CONFIG_HAL_HW_TYPE,
+        PHBAL_REG_HAL_HW_PN5180);
+#endif
+#ifdef NXPBUILD__PHHAL_HW_RC523
+    status = phbalReg_SetConfig(
+        &sBalReader,
+        PHBAL_REG_CONFIG_HAL_HW_TYPE,
+        PHBAL_REG_HAL_HW_RC523);
+#endif
+#ifdef NXPBUILD__PHHAL_HW_RC663
+    status = phbalReg_SetConfig(
+        &sBalReader,
+        PHBAL_REG_CONFIG_HAL_HW_TYPE,
+        PHBAL_REG_HAL_HW_RC663);
+#endif
+    CHECK_STATUS(status);
 
-    /* Set the HAL configuration to SPI */
-    status = phhalHw_SetConfig(&self->data.hal, PHHAL_HW_CONFIG_BAL_CONNECTION,
-        PHHAL_HW_BAL_CONNECTION_SPI);
-    if (PH_ERR_SUCCESS != status)
-    {
-        PyErr_Format(InitError, "SetConfig failed: %04x", status);
-        return -1;
-    }
+    status = phbalReg_SetPort(
+        &sBalReader,
+        SPI_CONFIG);
+    CHECK_STATUS(status);
 
-    /* Initialize the 14443-3A PAL (Protocol Abstraction Layer) component */
-    PH_CHECK_SUCCESS_FCT(status, phpalI14443p3a_Sw_Init(&self->data.I14443p3a,
-        sizeof(phpalI14443p3a_Sw_DataParams_t), &self->data.hal));
+    /* Open BAL */
+    status = phbalReg_OpenPort(&sBalReader);
+    CHECK_STATUS(status);
 
-    /* Initialize the 14443-4 PAL component */
-    PH_CHECK_SUCCESS_FCT(status, phpalI14443p4_Sw_Init(&self->data.I14443p4,
-        sizeof(phpalI14443p4_Sw_DataParams_t), &self->data.hal));
+    /* Initialize the Reader HAL (Hardware Abstraction Layer) component */
+    status = phhalHw_Nfc_IC_Init(
+                                &sHal_Nfc_Ic,
+                                sizeof(phhalHw_Nfc_Ic_DataParams_t),
+                                &sBalReader,
+                                0,
+                                bHalBufferTx,
+                                sizeof(bHalBufferTx),
+                                bHalBufferRx,
+                                sizeof(bHalBufferRx));
+    CHECK_SUCCESS(status);
 
-    /* Initialize the Mifare PAL component */
-    PH_CHECK_SUCCESS_FCT(status, phpalMifare_Sw_Init(&self->data.palMifare,
-        sizeof(phpalMifare_Sw_DataParams_t), &self->data.hal, &self->data.I14443p4));
+    /* Set the parameter to use the SPI interface */
+    sHal_Nfc_Ic.sHal.bBalConnectionType = PHHAL_HW_BAL_CONNECTION_SPI;
 
-    /* Initialize Ultralight(-C) AL component */
-    PH_CHECK_SUCCESS_FCT(status, phalMful_Sw_Init(&self->data.alMful,
-        sizeof(phalMful_Sw_DataParams_t), &self->data.palMifare, NULL, NULL, NULL));
+	Configure_Device(&sHal_Nfc_Ic);
 
+    /* Set the generic pointer */
+    pHal = &sHal_Nfc_Ic.sHal;
+
+    /* Initializing specific objects for the communication with MIFARE (R) Classic cards.
+     * The MIFARE (R) Classic card is compliant of ISO 14443-3 and ISO 14443-4
+     */
+
+	 /* Initialize the I14443-A PAL layer */
+    status = phpalI14443p3a_Sw_Init(&spalI14443p3a, sizeof(phpalI14443p3a_Sw_DataParams_t), &sHal_Nfc_Ic.sHal);
+    CHECK_STATUS(status);
+
+    /* Initialize the I14443-A PAL component */
+    status = phpalI14443p4a_Sw_Init(&spalI14443p4a, sizeof(phpalI14443p4a_Sw_DataParams_t), &sHal_Nfc_Ic.sHal);
+    CHECK_STATUS(status);
+
+    /* Initialize the I14443-4 PAL component */
+    status = phpalI14443p4_Sw_Init(&spalI14443p4, sizeof(phpalI14443p4_Sw_DataParams_t), &sHal_Nfc_Ic.sHal);
+    CHECK_STATUS(status);
+
+    /* Initialize the I14443-B PAL  component */
+    status = phpalI14443p3b_Sw_Init(&spalI14443p3b, sizeof(phpalI14443p3b_Sw_DataParams_t), &sHal_Nfc_Ic.sHal);
+    CHECK_STATUS(status);
+	
+    /* Initialize the MIFARE PAL component */
+    status = phpalMifare_Sw_Init(&spalMifare, sizeof(phpalMifare_Sw_DataParams_t), &sHal_Nfc_Ic.sHal, NULL);
+    CHECK_STATUS(status);
+
+    /* Initialize the keystore component */
+    status = phKeyStore_Sw_Init(
+                                &sSwkeyStore,
+                                sizeof(phKeyStore_Sw_DataParams_t),
+                                &sKeyEntries[0],
+                                NUMBER_OF_KEYENTRIES,
+                                &sKeyVersionPairs[0],
+                                NUMBER_OF_KEYVERSIONPAIRS,
+                                &sKUCEntries[0],
+                                NUMBER_OF_KUCENTRIES);
+    CHECK_SUCCESS(status);
+
+    /* Initialize the discover component */
+    status = phacDiscLoop_Sw_Init(&sDiscLoop, sizeof(phacDiscLoop_Sw_DataParams_t), &sHal_Nfc_Ic.sHal);
+    CHECK_SUCCESS(status);
+
+    /* Load profile for Discovery loop */
+    LoadProfile();
+
+    /* load a Key to the Store */
+    /* Note: If You use Key number 0x00, be aware that in SAM
+      this Key is the 'Host authentication key' !!! */
+    status = phKeyStore_FormatKeyEntry(&sSwkeyStore, 1, PH_KEYSTORE_KEY_TYPE_MIFARE);
+    CHECK_STATUS(status);
+
+    /* Set Key Store */
+    status = phKeyStore_SetKey(&sSwkeyStore, 1, 0, PH_KEYSTORE_KEY_TYPE_MIFARE, &Key[0], 0);
+    CHECK_STATUS(status);
+
+    /* Initialize the MIFARE (R) Classic AL component - set NULL because
+     * the keys are loaded in E2 by the function */
+    /* phKeyStore_SetKey */
+    status = phalMfc_Sw_Init(&salMfc, sizeof(phalMfc_Sw_DataParams_t), &spalMifare, &sSwkeyStore);
+    CHECK_STATUS(status);
+
+    /* Read the version of the reader IC */
+#if defined NXPBUILD__PHHAL_HW_RC523
+    status = phhalHw_Rc523_ReadRegister(&sHal_Nfc_Ic.sHal, PHHAL_HW_RC523_REG_VERSION, &bDataBuffer[0]);
+    CHECK_SUCCESS(status);
+    //~ DEBUG_PRINTF("\nReader chip PN512: 0x%02x\n", bDataBuffer[0]);
+#endif
+#if defined NXPBUILD__PHHAL_HW_RC663
+    status = phhalHw_Rc663_ReadRegister(&sHal_Nfc_Ic.sHal, PHHAL_HW_RC663_REG_VERSION, &bDataBuffer[0]);
+    CHECK_SUCCESS(status);
+    //~ DEBUG_PRINTF("\nReader chip RC663: 0x%02x\n", bDataBuffer[0]);
+#endif
+
+    /* Return Success */
+    return PH_ERR_SUCCESS;
+}
+
+
+int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds) {
+
+	Set_Interface_Link();
+	Reset_reader_device();
+	NfcRdLibInit();
     return 0;
 }
 
@@ -78,56 +314,59 @@ phStatus_t Mifare_activate_card(phpalI14443p3a_Sw_DataParams_t *I14443p3a, uint8
 
 PyObject *Mifare_select(Mifare *self)
 {
-    uint8_t byteBufferSize = UID_BUFFER_SIZE;
-    uint8_t byteBuffer[UID_BUFFER_SIZE];
+phStatus_t  status = 0;
+    uint16_t    wTagsDetected = 0;
+    uint8_t     bUid[PHAC_DISCLOOP_I3P3A_MAX_UID_LENGTH];
+    uint8_t     bUidSize;
+    while(1)    /* Continuous loop */
+    {
+        DEBUG_PRINTF("\nReady to detect\n");
+        
+        do
+        {
+            /* Field OFF */
+            status = phhalHw_FieldOff(pHal);
+            CHECK_STATUS(status);
 
-    uint8_t pAtqa[2];
-    phStatus_t status;
+            /* Configure Discovery loop for Poll Mode */
+            status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_NEXT_POLL_STATE, PHAC_DISCLOOP_POLL_STATE_DETECTION);
+            CHECK_STATUS(status);
 
-    uint8_t bSak;
-    uint8_t bMoreCardsAvailable;
+            /* Run Discovery loop */
+            status = phacDiscLoop_Run(&sDiscLoop, PHAC_DISCLOOP_ENTRY_POINT_POLL);
 
-    /* reset the IC  */
-    phhalHw_Rc523_Cmd_SoftReset(&self->data.hal);
+        }while((status & PH_ERR_MASK) != PHAC_DISCLOOP_DEVICE_ACTIVATED); /* Exit on Card detection */
 
-    /* Reset the RF field */
-    if ((status = phhalHw_FieldReset(&self->data.hal)) != PH_ERR_SUCCESS) {
-        return PyErr_Format(SelectError, "FieldReset command failed: %04x", status);
-    }
+        /* Card detected */
+        /* Get the tag types detected info */
+        status = phacDiscLoop_GetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_TECH_DETECTED, &wTagsDetected);
 
-    /* Apply the type A protocol settings
-    * and activate the RF field. */
-    if ((status = phhalHw_ApplyProtocolSettings(&self->data.hal, PHHAL_HW_CARDTYPE_ISO14443A)) != PH_ERR_SUCCESS) {
-        return PyErr_Format(SelectError, "ApplyProtocolSettings command failed: %04x", status);
-    }
+        /* Check for Status */
+        if ((status & PH_ERR_MASK) == PH_ERR_SUCCESS)
+        {
+            /* Check for Type A tag detection */
+            if (PHAC_DISCLOOP_CHECK_ANDMASK(wTagsDetected, PHAC_DISCLOOP_POS_BIT_MASK_A))
+            {
 
-    /* Empty the pAtqa */
-    memset(pAtqa, '\0', 2);
+							uint8_t byteBufferSize = sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1;
+					    uint8_t byteBuffer[sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1];
+						        uint8_t i;
+					        char asciiBuffer[sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1];
+					
+					        if (byteBufferSize + 1 > sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1) {
+					            // Truncate if we got back too much data
+					            byteBufferSize = sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize;
+					        }
+					
+					        for (i = 0; i < byteBufferSize; i++) {
+					            sprintf(&asciiBuffer[2 * i], "%02X", sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].aUid[i]);
+					        }
+					
+					        return PyUnicode_FromString(asciiBuffer);
+    
 
-    if ((status = phpalI14443p3a_RequestA(&self->data.I14443p3a, pAtqa)) != PH_ERR_SUCCESS) {
-        return PyErr_Format(SelectError, "RequestA command failed: %04x", status);
-    }
-
-    /* Reset the RF field */
-    if ((status = phhalHw_FieldReset(&self->data.hal)) != PH_ERR_SUCCESS) {
-        return PyErr_Format(SelectError, "FieldReset command failed: %04x", status);
-    }
-    /* Activate the communication layer part 3 of the ISO 14443A standard. */
-    if ( phpalI14443p3a_ActivateCard(&self->data.I14443p3a, NULL, 0x00, byteBuffer, &byteBufferSize, &bSak, &bMoreCardsAvailable) == PH_ERR_SUCCESS) {
-        // Card is present, return it as a python object.
-        uint8_t i;
-        char asciiBuffer[UID_ASCII_BUFFER_SIZE];
-
-        if (byteBufferSize + 1 > UID_ASCII_BUFFER_SIZE) {
-            // Truncate if we got back too much data
-            byteBufferSize = UID_ASCII_BUFFER_SIZE - 1;
+            }
         }
-
-        for (i = 0; i < byteBufferSize; i++) {
-            sprintf(&asciiBuffer[2 * i], "%02X", byteBuffer[i]);
-        }
-
-        return PyUnicode_FromString(asciiBuffer);
     }
 
     Py_RETURN_NONE;
@@ -135,69 +374,98 @@ PyObject *Mifare_select(Mifare *self)
 
 PyObject *Mifare_read_block(Mifare *self, PyObject *args)
 {
-    const size_t bufferSize = PHAL_MFUL_READ_BLOCK_LENGTH;
-    uint8_t data[bufferSize];
-    uint8_t blockIdx;
-    phStatus_t status;
-
-    if (!PyArg_ParseTuple(args, "b", &blockIdx)) {
+   	    uint8_t blockIdx;
+	if (!PyArg_ParseTuple(args, "b", &blockIdx)) {
         return NULL;
     }
 
-    status = phalMful_Read(&self->data.alMful, blockIdx, data);
 
-    if (status != PH_ERR_SUCCESS) {
-        return PyErr_Format(ReadError, "Read failed: %04x", status);
-    }
 
-#if PY_MAJOR_VERSION >= 3
-    return Py_BuildValue("y#", data, bufferSize);
-#else
-    return Py_BuildValue("s#", data, bufferSize);
-#endif
+
+    
+    
+phStatus_t  status = 0;
+    uint16_t    wTagsDetected = 0;
+    uint8_t     bUid[PHAC_DISCLOOP_I3P3A_MAX_UID_LENGTH];
+    uint8_t     bUidSize;
+
+    /* Set Interrupt */
+
+    /* Initialize library */
+
+                        
+
+                        /* Read data from block 4 */
+                        status = phalMful_Read(&salMfc, blockIdx, bDataBuffer);
+                            if (status != PH_ERR_SUCCESS) {
+						        return PyErr_Format(ReadError, "Read failed: %04x", status);
+						    }
+                        /* Check for Status */
+
+                        return Py_BuildValue("s#", &bDataBuffer[0], MFC_BLOCK_DATA_SIZE);
+
+
 }
+
 
 PyObject *Mifare_read_sign(Mifare *self)
 {
-    const size_t bufferSize = PHAL_MFUL_SIG_LENGTH;
-    uint8_t data[bufferSize];
-    uint8_t *sign = data;
+  	const size_t bufferSize = PHAL_MFUL_SIG_LENGTH;
+	uint8_t data[bufferSize];
+	uint8_t    *sign = data;
+	
 
-    phStatus_t status;
 
-    status = phalMful_ReadSign(&self->data.alMful, '\0', &sign);
+    
+    
+phStatus_t  status = 0;
+    uint16_t    wTagsDetected = 0;
+    uint8_t     bUid[PHAC_DISCLOOP_I3P3A_MAX_UID_LENGTH];
+    uint8_t     bUidSize;
 
-    if (status != PH_ERR_SUCCESS) {
-        return PyErr_Format(ReadError, "Read failed: %04x", status);
-    }
 
-#if PY_MAJOR_VERSION >= 3
-    return Py_BuildValue("y#", sign, bufferSize);
-#else
-    return Py_BuildValue("s#", sign, bufferSize);
-#endif
+                        /* Read data from block 4 */
+                        status = phalMful_ReadSign(&salMfc,'\0', &sign);
+                            if (status != PH_ERR_SUCCESS) {
+								printf("\nStatus = %X\n",status);
+						        return PyErr_Format(ReadError, "Read failed: %04x", status);
+						    }
+                        /* Check for Status */
+
+                        return Py_BuildValue("s#", sign, bufferSize);
+
+
+                       
+                   
+
 }
 
 PyObject *Mifare_write_block(Mifare *self, PyObject *args)
 {
-    uint16_t status;
-    uint8_t blockIdx;
+     phStatus_t  status = 0;
+     uint8_t blockIdx;
     uint8_t *data;
     int dataLen;
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyArg_ParseTuple(args, "by#", &blockIdx, &data, &dataLen)) {
-#else
+    uint16_t    wTagsDetected = 0;
+    uint8_t     bUid[PHAC_DISCLOOP_I3P3A_MAX_UID_LENGTH];
+    uint8_t     bUidSize;
     if (!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
-#endif
+		
         return NULL;
-    }
+	}
 
-    if ((status = phalMful_Write(&self->data.alMful, blockIdx, data)) != 0) {
-        return PyErr_Format(WriteError, "Write failed: %04x", status);
-    }
 
-    Py_RETURN_NONE;
+                
+                        status = phalMful_Write(&salMfc, blockIdx, data);
+
+                        /* Check for Status */
+                        if (status != PH_ERR_SUCCESS)
+                        {
+							return PyErr_Format(WriteError, "Write failed: %04x", status);
+                        }
+						Py_RETURN_NONE;
+						
 }
 
 /***********************************
