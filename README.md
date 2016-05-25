@@ -27,15 +27,18 @@ Then simply run:
 sudo pip install nxppy
 ```
 
-Installation will take some time as it automatically pulls down and builds NeardAL, WiringPi, and the NXP Reader Library from souce.
+Installation will take some time as it automatically pulls down the NXP NFC Reader Library from souce.
 
 Source
 =====
 To install from source, use distutils:
 
 ```
+git clone https://github.com/svvitale/nxppy
+cd nxppy
 sudo apt-get install python-setuptools
 sudo python setup.py build install
+
 ```
 
 Usage
