@@ -26,7 +26,7 @@ fi
 
   cd build
   cmake ..
-  make -j4 NxpRdLibLinuxPN512
+  make NxpRdLibLinuxPN512
   cd ..
   OPT="" CFLAGS="-lpthread -lrt -std=gnu99" python wrapper.py build
   cp build/lib.linux-armv7l-2.7/nxppy.so nxppy.so
