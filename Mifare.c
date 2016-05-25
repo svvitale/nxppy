@@ -1,14 +1,7 @@
 #include "Mifare.h"
-#ifdef   DEBUG
-#include <stdio.h>
-#define  DEBUG_FLUSH(x)      //{char buff[1]; buff[0] = x; __sys_write(0, buff, 1);}
-#else
-#define  DEBUG_FLUSH(x)
-#endif
 
-#define NUMBER_OF_KEYENTRIES        2
-#define NUMBER_OF_KEYVERSIONPAIRS   2
-#define NUMBER_OF_KUCENTRIES        1
+#include <stdio.h>
+
 
 #define DATA_BUFFER_LEN             16 /* Buffer length */
 #define MFC_BLOCK_DATA_SIZE         16 /* Block Data size - 16 Bytes */
@@ -34,11 +27,6 @@ phpalMifare_Sw_DataParams_t        spalMifare;                 /* PAL  MIFARE co
 phacDiscLoop_Sw_DataParams_t       sDiscLoop;                  /* Discovery loop component */
 phalMfc_Sw_DataParams_t            salMfc;                     /* MIFARE Classic parameter structure */
 
-phKeyStore_Sw_DataParams_t         sSwkeyStore;                /* Sw Key parameter structure */
-phKeyStore_Sw_KeyEntry_t           sKeyEntries[NUMBER_OF_KEYENTRIES];                                  /* Sw KeyEntry structure */
-phKeyStore_Sw_KUCEntry_t           sKUCEntries[NUMBER_OF_KUCENTRIES];                                  /* Sw Key usage counter structure */
-phKeyStore_Sw_KeyVersionPair_t     sKeyVersionPairs[NUMBER_OF_KEYVERSIONPAIRS * NUMBER_OF_KEYENTRIES]; /* Sw KeyVersionPair structure */
-
 uint8_t                            bDataBuffer[DATA_BUFFER_LEN];  /* universal data buffer */
 
 uint8_t                            bSak;                      /* SAK  card type information */
@@ -54,8 +42,6 @@ const uint8_t GI[] = { 0x46,0x66,0x6D,
 
 static uint8_t    aData[50];              /* ATR response holder */
 
-/* Set the key for the MIFARE (R) Classic cards. */
-uint8_t Key[6] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
 
 /* Don't change the following line */
 uint8_t Original_Key[6] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
@@ -241,17 +227,6 @@ phStatus_t NfcRdLibInit(void)
     status = phpalMifare_Sw_Init(&spalMifare, sizeof(phpalMifare_Sw_DataParams_t), &sHal_Nfc_Ic.sHal, NULL);
     CHECK_STATUS(status);
 
-    /* Initialize the keystore component */
-    status = phKeyStore_Sw_Init(
-                                &sSwkeyStore,
-                                sizeof(phKeyStore_Sw_DataParams_t),
-                                &sKeyEntries[0],
-                                NUMBER_OF_KEYENTRIES,
-                                &sKeyVersionPairs[0],
-                                NUMBER_OF_KEYVERSIONPAIRS,
-                                &sKUCEntries[0],
-                                NUMBER_OF_KUCENTRIES);
-    CHECK_SUCCESS(status);
 
     /* Initialize the discover component */
     status = phacDiscLoop_Sw_Init(&sDiscLoop, sizeof(phacDiscLoop_Sw_DataParams_t), &sHal_Nfc_Ic.sHal);
@@ -260,20 +235,7 @@ phStatus_t NfcRdLibInit(void)
     /* Load profile for Discovery loop */
     LoadProfile();
 
-    /* load a Key to the Store */
-    /* Note: If You use Key number 0x00, be aware that in SAM
-      this Key is the 'Host authentication key' !!! */
-    status = phKeyStore_FormatKeyEntry(&sSwkeyStore, 1, PH_KEYSTORE_KEY_TYPE_MIFARE);
-    CHECK_STATUS(status);
-
-    /* Set Key Store */
-    status = phKeyStore_SetKey(&sSwkeyStore, 1, 0, PH_KEYSTORE_KEY_TYPE_MIFARE, &Key[0], 0);
-    CHECK_STATUS(status);
-
-    /* Initialize the MIFARE (R) Classic AL component - set NULL because
-     * the keys are loaded in E2 by the function */
-    /* phKeyStore_SetKey */
-    status = phalMfc_Sw_Init(&salMfc, sizeof(phalMfc_Sw_DataParams_t), &spalMifare, &sSwkeyStore);
+    status = phalMfc_Sw_Init(&salMfc, sizeof(phalMfc_Sw_DataParams_t), &spalMifare, NULL);
     CHECK_STATUS(status);
 
     /* Read the version of the reader IC */
@@ -301,16 +263,6 @@ int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds) {
     return 0;
 }
 
-phStatus_t Mifare_activate_card(phpalI14443p3a_Sw_DataParams_t *I14443p3a, uint8_t byteBuffer[], uint8_t *byteBufferSize)
-{
-    uint8_t bSak;
-    uint8_t bMoreCardsAvailable;
-
-    /* Activate the communication layer part 3
-    * of the ISO 14443A standard. */
-    return phpalI14443p3a_ActivateCard(I14443p3a,
-        NULL, 0x00, byteBuffer, byteBufferSize, &bSak, &bMoreCardsAvailable);
-}
 
 PyObject *Mifare_select(Mifare *self)
 {
@@ -401,10 +353,13 @@ phStatus_t  status = 0;
 						        return PyErr_Format(ReadError, "Read failed: %04x", status);
 						    }
                         /* Check for Status */
-
+#if PY_MAJOR_VERSION >= 3
+                        return Py_BuildValue("y#", &bDataBuffer[0], MFC_BLOCK_DATA_SIZE);
+#else
                         return Py_BuildValue("s#", &bDataBuffer[0], MFC_BLOCK_DATA_SIZE);
 
-
+#endif
+                 
 }
 
 
@@ -431,10 +386,13 @@ phStatus_t  status = 0;
 						        return PyErr_Format(ReadError, "Read failed: %04x", status);
 						    }
                         /* Check for Status */
-
+ 
+#if PY_MAJOR_VERSION >= 3
+                        return Py_BuildValue("y#", sign, bufferSize);
+#else
                         return Py_BuildValue("s#", sign, bufferSize);
 
-
+#endif
                        
                    
 
