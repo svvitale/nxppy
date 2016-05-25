@@ -6,7 +6,7 @@ NC='\033[0m' # No Color
 prereq() {
   echo -e "[${blue}Installing prerequisites${NC}]"
   sudo apt-get update
-  sudo apt-get -y install python2.7-dev build-essential  libtool cmake
+  sudo apt-get -y install python2.7-dev build-essential cmake
 }
 
 
