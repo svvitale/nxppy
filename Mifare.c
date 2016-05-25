@@ -43,28 +43,6 @@ const uint8_t GI[] = { 0x46,0x66,0x6D,
 static uint8_t    aData[50];              /* ATR response holder */
 
 
-/* Don't change the following line */
-uint8_t Original_Key[6] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
-
-/***********************************************************************************************
- * \brief   Print a given array of integers on the console
- * \param   *pBuff   Buffer Reference
- * \param   size      data size to be print
- **********************************************************************************************/
-#ifdef   DEBUG
-static void PRINT_BUFF(uint8_t *pBuff, uint8_t size)
-{
-    uint8_t bBufIdx;
-
-    for(bBufIdx = 0; bBufIdx < size; bBufIdx++)
-    {
-        DEBUG_PRINTF(" %02X",pBuff[bBufIdx]);
-    }
-}
-#else
-#define  PRINT_BUFF(x, y)
-#endif /* DEBUG */
-
 static phStatus_t LoadProfile(void)
 {
     phStatus_t status = PH_ERR_SUCCESS;
@@ -242,12 +220,10 @@ phStatus_t NfcRdLibInit(void)
 #if defined NXPBUILD__PHHAL_HW_RC523
     status = phhalHw_Rc523_ReadRegister(&sHal_Nfc_Ic.sHal, PHHAL_HW_RC523_REG_VERSION, &bDataBuffer[0]);
     CHECK_SUCCESS(status);
-    //~ DEBUG_PRINTF("\nReader chip PN512: 0x%02x\n", bDataBuffer[0]);
 #endif
 #if defined NXPBUILD__PHHAL_HW_RC663
     status = phhalHw_Rc663_ReadRegister(&sHal_Nfc_Ic.sHal, PHHAL_HW_RC663_REG_VERSION, &bDataBuffer[0]);
     CHECK_SUCCESS(status);
-    //~ DEBUG_PRINTF("\nReader chip RC663: 0x%02x\n", bDataBuffer[0]);
 #endif
 
     /* Return Success */
@@ -282,7 +258,7 @@ phStatus_t  status = 0;
     uint8_t     bUidSize;
     while(1)    /* Continuous loop */
     {
-        DEBUG_PRINTF("\nReady to detect\n");
+
         
         do
         {
