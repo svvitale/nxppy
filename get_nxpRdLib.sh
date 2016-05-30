@@ -15,8 +15,8 @@ nxp() {
 echo -e "[${blue}Downloading NXP Reader Library${NC}]"
   wget https://cache.nxp.com/documents/software/sw3693.zip -O nxp.zip
   unzip -o nxp.zip
-  value=$(cat licencefile.txt)
-value=$(cat licencefile.txt)
+
+value=$(cat NXP_NFC_Reader_Library_licencefile.txt)
 if (whiptail --title "Please read and accept the NXP NFC Reader Libary greement" --yesno --yes-button "accept" --no-button "reject" --scrolltext "$value" 0 0) then
 		echo "Setup Continues"
 else
