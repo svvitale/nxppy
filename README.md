@@ -1,8 +1,8 @@
 nxppy
 =====
-nxppy is a *very* simple Python wrapper for interfacing with the excellent [NXP EXPLORE-NFC shield](http://uk.farnell.com/nxp-explore-nfc) for the [Raspberry Pi](http://www.raspberrypi.org/).  It takes NXP's Reader Library and provides a thin layer for detecting a Mifare RFID tag, reading its UID (unique identifier), and reading/writing data from/to the user area.
+nxppy is a *very* simple Python wrapper for interfacing with the excellent [NXP EXPLORE-NFC shield](http://uk.farnell.com/nxp-explore-nfc) for the [Raspberry Pi](http://www.raspberrypi.org/).  It takes NXP's NFC Reader Library and provides a thin layer for detecting a Mifare NFC tag, reading its UID (unique identifier), and reading/writing data from/to the user area.
 
-This was based very heavily on NXP's card_polling example code.  The example code was only reorganized to be more conducive as an interface.  NXP still retains full copyright and ownership of the example code.  All files in this repository are distributed under the MIT license.
+This was based very heavily on NXP's MifareClassic example code.  The example code was only reorganized to be more conducive as an interface.  NXP still retains full copyright and ownership of the example code and the NFC Reader Library.  All files in this repository are distributed under the MIT license.
 
 Compatibility
 =====
@@ -10,7 +10,7 @@ Tested with both Python 2.7 (as installed on Raspberry Pi) and with a manually c
 
 Requirements
 =====
-The NXP-EXPLORE card relies on SPI being enabled.  Please enable SPI using raspi-config prior to installing nxppy.
+The EXPLORE-NFC card relies on SPI being enabled. Please enable SPI using raspi-config prior to installing nxppy.
 
 Installation
 =====
@@ -43,7 +43,7 @@ sudo python setup.py build install
 
 Usage
 =====
-Currently, the module supports only Mifare cards:
+Currently, the module supports ISO14443-3A/4A cards only:
 
 ```python
 import nxppy
@@ -58,10 +58,10 @@ uid = mifare.select()
 block10bytes = mifare.read_block(10)
 
 # Write a single block of 4 bytes
-mifare.write_block(10, b'abcd')
+mifare.write_block(10, 'abcd')
 ```
 
-Polling example, equivalent to NXP's card_polling example:
+Example polling for tags:
 
 ```python
 import nxppy
@@ -74,7 +74,7 @@ while True:
     try:
         uid = mifare.select()
         print(uid)
-    except nxppy.SelectError:
+    except nxppy.SelectError:-
         # SelectError is raised if no card is in the field.
         pass
         
