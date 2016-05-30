@@ -33,7 +33,6 @@ fi
 }
 
 cleanup() {
-  cd ..
   rm -rf *.zip *.gz *.deb
 }
 
