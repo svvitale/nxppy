@@ -326,19 +326,13 @@ phStatus_t  status = 0;
     uint16_t    wTagsDetected = 0;
     uint8_t     bUid[PHAC_DISCLOOP_I3P3A_MAX_UID_LENGTH];
     uint8_t     bUidSize;
+                       
 
-    /* Set Interrupt */
-
-    /* Initialize library */
-
-                        
-
-                        /* Read data from block 4 */
                         status = phalMful_Read(&salMfc, blockIdx, bDataBuffer);
                             if (status != PH_ERR_SUCCESS) {
 						        return PyErr_Format(ReadError, "Read failed: %04x", status);
 						    }
-                        /* Check for Status */
+
 #if PY_MAJOR_VERSION >= 3
                         return Py_BuildValue("y#", &bDataBuffer[0], MFC_BLOCK_DATA_SIZE);
 #else
@@ -365,13 +359,13 @@ phStatus_t  status = 0;
     uint8_t     bUidSize;
 
 
-                        /* Read data from block 4 */
+
                         status = phalMful_ReadSign(&salMfc,'\0', &sign);
                             if (status != PH_ERR_SUCCESS) {
 								printf("\nStatus = %X\n",status);
 						        return PyErr_Format(ReadError, "Read failed: %04x", status);
 						    }
-                        /* Check for Status */
+
  
 #if PY_MAJOR_VERSION >= 3
                         return Py_BuildValue("y#", sign, bufferSize);
@@ -399,11 +393,8 @@ PyObject *Mifare_write_block(Mifare *self, PyObject *args)
         return NULL;
 	}
 
-
-                
                         status = phalMful_Write(&salMfc, blockIdx, data);
 
-                        /* Check for Status */
                         if (status != PH_ERR_SUCCESS)
                         {
 							return PyErr_Format(WriteError, "Write failed: %04x", status);
