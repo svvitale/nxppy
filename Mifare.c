@@ -333,9 +333,7 @@ PyObject *Mifare_read_block(Mifare *self, PyObject *args)
     
     
     phStatus_t  status = 0;
-    uint16_t    wTagsDetected = 0;
-    uint8_t     bUid[PHAC_DISCLOOP_I3P3A_MAX_UID_LENGTH];
-    uint8_t     bUidSize;
+
                        
 
     status = phalMful_Read(&salMfc, blockIdx, bDataBuffer);
@@ -359,9 +357,7 @@ PyObject *Mifare_read_sign(Mifare *self)
     uint8_t    *sign = data;
 
 phStatus_t  status = 0;
-    uint16_t    wTagsDetected = 0;
-    uint8_t     bUid[PHAC_DISCLOOP_I3P3A_MAX_UID_LENGTH];
-    uint8_t     bUidSize;
+
 
 
 
@@ -386,9 +382,7 @@ PyObject *Mifare_write_block(Mifare *self, PyObject *args)
     uint8_t *data;
     int dataLen;
 
-    uint16_t    wTagsDetected = 0;
-    uint8_t     bUid[PHAC_DISCLOOP_I3P3A_MAX_UID_LENGTH];
-    uint8_t     bUidSize;
+
     #if PY_MAJOR_VERSION >= 3
         if(!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
     #else
