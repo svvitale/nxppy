@@ -381,16 +381,19 @@ phStatus_t  status = 0;
 
 PyObject *Mifare_write_block(Mifare *self, PyObject *args)
 {
-     phStatus_t  status = 0;
-     uint8_t blockIdx;
+    phStatus_t  status = 0;
+    uint8_t blockIdx;
     uint8_t *data;
     int dataLen;
 
     uint16_t    wTagsDetected = 0;
     uint8_t     bUid[PHAC_DISCLOOP_I3P3A_MAX_UID_LENGTH];
     uint8_t     bUidSize;
-    if (!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
-        
+    #if PY_MAJOR_VERSION >= 3
+        if(!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
+    #else
+        if(!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
+    #endif    
         return NULL;
     }
 
