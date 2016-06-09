@@ -256,55 +256,65 @@ phStatus_t  status = 0;
     uint16_t    wTagsDetected = 0;
     uint8_t     bUid[PHAC_DISCLOOP_I3P3A_MAX_UID_LENGTH];
     uint8_t     bUidSize;
-    while(1)    /* Continuous loop */
+
+
+    /* Field OFF */
+    status = phhalHw_FieldOff(pHal);
+    CHECK_STATUS(status);
+    if(status != PH_ERR_SUCCESS)
     {
+        return PyErr_Format(SelectError, "FieldOff command failed: %4x",status);
+    }
+    /* Configure Discovery loop for Poll Mode */
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_NEXT_POLL_STATE, PHAC_DISCLOOP_POLL_STATE_DETECTION);
+    CHECK_STATUS(status);
+    if(status != PH_ERR_SUCCESS)
+    {
+        return PyErr_Format(SelectError, "DiscLoop_SetConfig command failed: %4x",status);
+    }
+    /* Run Discovery loop */
+    status = phacDiscLoop_Run(&sDiscLoop, PHAC_DISCLOOP_ENTRY_POINT_POLL);
+    if(((status & PH_ERR_MASK) != PHAC_DISCLOOP_DEVICE_ACTIVATED))
+    {
+        return PyErr_Format(SelectError, "DiscLoop_Run command failed: %4x",status);
+    }
+    /* Card detected */
+    /* Get the tag types detected info */
+    status = phacDiscLoop_GetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_TECH_DETECTED, &wTagsDetected);
 
-        
-        do
+    /* Check for Status */
+    if ((status & PH_ERR_MASK) == PH_ERR_SUCCESS)
+    {
+        /* Check for Type A tag detection */
+        if (PHAC_DISCLOOP_CHECK_ANDMASK(wTagsDetected, PHAC_DISCLOOP_POS_BIT_MASK_A))
         {
-            /* Field OFF */
-            status = phhalHw_FieldOff(pHal);
-            CHECK_STATUS(status);
 
-            /* Configure Discovery loop for Poll Mode */
-            status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_NEXT_POLL_STATE, PHAC_DISCLOOP_POLL_STATE_DETECTION);
-            CHECK_STATUS(status);
-
-            /* Run Discovery loop */
-            status = phacDiscLoop_Run(&sDiscLoop, PHAC_DISCLOOP_ENTRY_POINT_POLL);
-
-        }while((status & PH_ERR_MASK) != PHAC_DISCLOOP_DEVICE_ACTIVATED); /* Exit on Card detection */
-
-        /* Card detected */
-        /* Get the tag types detected info */
-        status = phacDiscLoop_GetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_TECH_DETECTED, &wTagsDetected);
-
-        /* Check for Status */
-        if ((status & PH_ERR_MASK) == PH_ERR_SUCCESS)
-        {
-            /* Check for Type A tag detection */
-            if (PHAC_DISCLOOP_CHECK_ANDMASK(wTagsDetected, PHAC_DISCLOOP_POS_BIT_MASK_A))
-            {
-
-                uint8_t byteBufferSize = sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1;
-                uint8_t byteBuffer[sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1];
-                uint8_t i;
-                char asciiBuffer[sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1];
-        
-                if (byteBufferSize + 1 > sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1) {
-                    // Truncate if we got back too much data
-                    byteBufferSize = sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize;
-                }
-        
-                for (i = 0; i < byteBufferSize; i++) {
-                    sprintf(&asciiBuffer[2 * i], "%02X", sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].aUid[i]);
-                }
-        
-                return PyUnicode_FromString(asciiBuffer);
+            uint8_t byteBufferSize = sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1;
+            uint8_t byteBuffer[sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1];
+            uint8_t i;
+            char asciiBuffer[sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1];
     
-
+            if (byteBufferSize + 1 > sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1) {
+                // Truncate if we got back too much data
+                byteBufferSize = sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize;
             }
+    
+            for (i = 0; i < byteBufferSize; i++) {
+                sprintf(&asciiBuffer[2 * i], "%02X", sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].aUid[i]);
+            }
+    
+            return PyUnicode_FromString(asciiBuffer);
+
+
         }
+        else
+        {
+            return PyErr_Format(SelectError, "DISCLOOP_CHECK_ANDMASK failed: %4x",status);
+        }
+    }
+    else
+    {
+        return PyErr_Format(SelectError, "DiscLoop_GetConfig commande failed: %4x",status);
     }
 
     Py_RETURN_NONE;
