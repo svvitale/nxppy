@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-
+#define TX_RX_BUFFER_SIZE           128//128 Byte buffer
 #define DATA_BUFFER_LEN             16 /* Buffer length */
 #define MFC_BLOCK_DATA_SIZE         16 /* Block Data size - 16 Bytes */
 
@@ -14,8 +14,8 @@ phbalReg_Stub_DataParams_t         sBalReader;                 /* BAL component 
     /*HAL variables*/
 phhalHw_Nfc_Ic_DataParams_t        sHal_Nfc_Ic;                /* HAL component holder for Nfc Ic's */
 void                              *pHal;                       /* HAL pointer */
-uint8_t                            bHalBufferTx[128];          /* HAL  TX buffer */
-uint8_t                            bHalBufferRx[128];          /* HAL  RX buffer */
+uint8_t                            bHalBufferTx[TX_RX_BUFFER_SIZE];          /* HAL  TX buffer */
+uint8_t                            bHalBufferRx[TX_RX_BUFFER_SIZE];          /* HAL  RX buffer */
 
     /*PAL variables*/
 phpalI14443p3a_Sw_DataParams_t     spalI14443p3a;              /* PAL  I14443-A component */
