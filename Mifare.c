@@ -69,7 +69,7 @@ static phStatus_t LoadProfile(void)
     /* ******************************************************************************************** */  
     
     /* Passive Bailout bitmap configuration */
-    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_BAIL_OUT, 0x00);
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_BAIL_OUT, PH_OFF);
     CHECK_STATUS(status);
 
     /* Passive poll bitmap configuration. Poll for only Type A Tags. */
@@ -77,15 +77,15 @@ static phStatus_t LoadProfile(void)
     CHECK_STATUS(status);
 
     /* Turn OFF Passive Listen. */
-    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_PAS_LIS_TECH_CFG, 0x00);
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_PAS_LIS_TECH_CFG, PH_OFF);
     CHECK_STATUS(status);
 
     /* Turn OFF active listen. */
-    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ACT_LIS_TECH_CFG, 0x00);
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ACT_LIS_TECH_CFG, PH_OFF);
     CHECK_STATUS(status);
 
     /* Turn OFF Active Poll */
-    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ACT_POLL_TECH_CFG, 0x00);
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ACT_POLL_TECH_CFG, PH_OFF);
     CHECK_STATUS(status);
 
     /* Disable LPCD feature. */
@@ -101,7 +101,7 @@ static phStatus_t LoadProfile(void)
     CHECK_STATUS(status);
 
     /* Device limit for Type A */
-    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_TYPEA_DEVICE_LIMIT, 1);
+    status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_TYPEA_DEVICE_LIMIT, PH_ON);
     CHECK_STATUS(status);
 
     /* Discovery loop Operation mode */
@@ -235,14 +235,14 @@ PyObject *Mifare_init(Mifare *self, PyObject *args, PyObject *kwds) {
     
     int ret;
     ret = Set_Interface_Link();
-    if(ret != 0)
+    if(ret != PH_ERR_SUCCESS)
     {
         return PyErr_Format(ReadError, "Hardware Initialisaton failed: %04x", ret);
     }
     Reset_reader_device();
 
     ret = NfcRdLibInit();
-    if(ret != 0)
+    if(ret != PH_ERR_SUCCESS)
     {
         return PyErr_Format(ReadError, "Hardware Initialisaton failed: %04x", ret);
     }
@@ -276,7 +276,14 @@ phStatus_t  status = 0;
     status = phacDiscLoop_Run(&sDiscLoop, PHAC_DISCLOOP_ENTRY_POINT_POLL);
     if(((status & PH_ERR_MASK) != PHAC_DISCLOOP_DEVICE_ACTIVATED))
     {
-        return PyErr_Format(SelectError, "DiscLoop_Run command failed: %4x",status);
+        if(status  == PHAC_DISCLOOP_NO_TECH_DETECTED)
+        {
+            return PyErr_Format(SelectError, "No Card Found: %4x",status);
+        }
+        else
+        {
+            return PyErr_Format(SelectError, "DiscLoop_Run command failed: %4x",status);
+        }
     }
     /* Card detected */
     /* Get the tag types detected info */
@@ -383,12 +390,9 @@ PyObject *Mifare_write_block(Mifare *self, PyObject *args)
     int dataLen;
 
 
-    #if PY_MAJOR_VERSION >= 3
-        if(!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
-    #else
-        if(!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
-    #endif    
-        return NULL;
+
+    if(!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
+    return NULL;
     }
 
     status = phalMful_Write(&salMfc, blockIdx, data);
