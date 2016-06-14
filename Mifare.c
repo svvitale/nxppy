@@ -276,9 +276,9 @@ phStatus_t  status = 0;
     status = phacDiscLoop_Run(&sDiscLoop, PHAC_DISCLOOP_ENTRY_POINT_POLL);
     if(((status & PH_ERR_MASK) != PHAC_DISCLOOP_DEVICE_ACTIVATED))
     {
-        if(status  == PHAC_DISCLOOP_NO_TECH_DETECTED)
+        if(status  == (PHAC_DISCLOOP_NO_TECH_DETECTED | PH_COMP_AC_DISCLOOP))
         {
-            return PyErr_Format(SelectError, "No Card Found: %4x",status);
+            return PyErr_Format(SelectError, "No Card detected: %4x",status);
         }
         else
         {
