@@ -6,26 +6,33 @@ from subprocess import call
 import multiprocessing
 from glob import glob
 
+
+
 nxppy = Extension('nxppy',
-                    sources = ['Mifare.c', 'nxppy.c'],
-                    extra_compile_args=['-O1'],
-                    extra_link_args=['-lwiringPi']
+                    define_macros = [('LINUX',None),('NATIVE_C_CODE',None),('NXPBUILD_CUSTOMER_HEADER_INCLUDED',None),('NXPBUILD__PHHAL_HW_RC523',None)],
+                    extra_compile_args=['-O0',
+                                        '-std=gnu99',
+                                        '-isystemnxprdlib/NxpRdLib/intfs',
+                                        '-isystemnxprdlib/NxpRdLib/types',
+                                        '-isystemnxprdlib/NxpRdLib',
+                                        '-isystemlinux/intfs',
+                                        '-isystemlinux/comps/phbalReg/src/Linux',
+                                        '-isystemlinux/shared',
+                                        '-isystemexamples/NfcrdlibEx4_MIFAREClassic/intfs',
+                                        '-isystemnxprdlib/NxpRdLib/comps/phbalReg/src/Stub',
+                                        '-isystemlinux/comps/phPlatform/src/Posix',
+                                        '-isystemlinux/comps/phOsal/src/Posix'
+                    ],
+                    extra_link_args=['build/linux/libNxpRdLibLinuxPN512.a','-lpthread','-lrt'],
+                    sources = ['Mifare.c', 'nxppy.c']
+                 
 )
 
 class build_nxppy(build):
     def run(self):
-        def compile():
+        def compile(extra_preargs=None):
             call( './get_nxpRdLib.sh', shell=True )
 
-            # Find where neard-explorenfc was extracted
-            nxprdlib_dir = glob('neard-explorenfc-*/nxprdlib')[0]
-
-            # Add relevant include directories
-            nxppy.include_dirs.append(nxprdlib_dir + '/types')
-            nxppy.include_dirs.append(nxprdlib_dir + '/intfs')
-
-            # Add library reference
-            nxppy.extra_link_args.insert(0, nxprdlib_dir + '/libnxprdlib.a')
 
         self.execute(compile, [], 'compiling NxpRdLib')
 
