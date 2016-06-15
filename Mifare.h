@@ -26,13 +26,41 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+
+/**
+ * Header for hardware configuration: bus interface, reset of attached reader ID, onboard LED handling etc.
+ * */
+#include <phhwConfig.h>
+
+/**
+ * Reader Library Headers
+ */
+#include <ph_Status.h>
+
+/*BAL Headers*/
+#include <phbalReg.h>
+
+/*PAL Headers*/
+#include <phpalI14443p3a.h>
+#include <phpalI14443p4.h>
+#include <phpalI14443p3b.h>
+#include <phpalI14443p4a.h>
+#include <phpalMifare.h>
+
+/*AL Headers*/
+#include <phalMfc.h>
+
+#include <phacDiscLoop.h>
+
+
+/* Printf macro */
+
 /* Configuration Headers */
 /* Controls build behavior of components */
 #include <ph_NxpBuild.h>
 /* Status code definitions */
 #include <ph_Status.h>
 
-#include <phbalReg_RpiSpi.h>
 
 /* Reader Library Headers */
 /* Generic ISO14443-3A Component of
@@ -48,24 +76,15 @@
  * Component of Reader Library Framework */
 #include <phalMful.h>
 #include <phalMfc.h>
-/* Generic KeyStore Component of
- * Reader Library Framework */
-/* In that example we don't use any
- * key. But we need the key components
- * for some function calls and you maight
- * need it when using crypto with
- * Ultralight-C cards. */
-#include <phKeyStore.h>
 
-#include <phpalFelica.h>
 #include <phpalI14443p3b.h>
 
 #define UID_BUFFER_SIZE 20
 #define UID_ASCII_BUFFER_SIZE ((UID_BUFFER_SIZE * 2) + 1)
 
 typedef struct {
-    phbalReg_RpiSpi_DataParams_t balReader;
-    phhalHw_Rc523_DataParams_t hal;
+    phbalReg_Stub_DataParams_t balReader;
+    phhalHw_Nfc_Ic_DataParams_t hal;
     phpalI14443p4_Sw_DataParams_t I14443p4;
     phpalMifare_Sw_DataParams_t palMifare;
     phpalI14443p3a_Sw_DataParams_t I14443p3a;
@@ -78,7 +97,7 @@ typedef struct {
     nfc_data data; 
 } Mifare;
 
-int Mifare_init(Mifare *self, PyObject *args, PyObject *kwds);
+PyObject *Mifare_init(Mifare *self, PyObject *args, PyObject *kwds);
 PyObject *Mifare_select(Mifare *self);
 PyObject *Mifare_read_block(Mifare *self, PyObject *args);
 PyObject *Mifare_read_sign(Mifare *self);
