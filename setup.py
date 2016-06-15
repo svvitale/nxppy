@@ -10,11 +10,22 @@ from glob import glob
 
 nxppy = Extension('nxppy',
                     define_macros = [('LINUX',None),('NATIVE_C_CODE',None),('NXPBUILD_CUSTOMER_HEADER_INCLUDED',None),('NXPBUILD__PHHAL_HW_RC523',None)],
-                    #compile argument '-w' is for not getting warnings because i can't do the necessary OPT="" shell command before starting setup.py
-                    extra_compile_args=['-w','-O0','-lrt','-lpthread','-std=gnu99'],
-                    extra_link_args=['build/linux/libNxpRdLibLinuxPN512.a','-O0','-lpthread','-lrt','-std=gnu99'],
+                    extra_compile_args=['-O0',
+                                        '-std=gnu99',
+                                        '-isystemnxprdlib/NxpRdLib/intfs',
+                                        '-isystemnxprdlib/NxpRdLib/types',
+                                        '-isystemnxprdlib/NxpRdLib',
+                                        '-isystemlinux/intfs',
+                                        '-isystemlinux/comps/phbalReg/src/Linux',
+                                        '-isystemlinux/shared',
+                                        '-isystemexamples/NfcrdlibEx4_MIFAREClassic/intfs',
+                                        '-isystemnxprdlib/NxpRdLib/comps/phbalReg/src/Stub',
+                                        '-isystemlinux/comps/phPlatform/src/Posix',
+                                        '-isystemlinux/comps/phOsal/src/Posix'
+                    ],
+                    extra_link_args=['build/linux/libNxpRdLibLinuxPN512.a','-lpthread','-lrt'],
                     sources = ['Mifare.c', 'nxppy.c']
-
+                 
 )
 
 class build_nxppy(build):
@@ -22,20 +33,6 @@ class build_nxppy(build):
         def compile(extra_preargs=None):
             call( './get_nxpRdLib.sh', shell=True )
 
-            # Find where neard-explorenfc was extracted
-
-            # Add relevant include directories
-            
-            nxppy.include_dirs.append('nxprdlib/NxpRdLib/intfs')
-            nxppy.include_dirs.append('nxprdlib/NxpRdLib/types')
-            nxppy.include_dirs.append('nxprdlib/NxpRdLib')
-            nxppy.include_dirs.append('linux/intfs')
-            nxppy.include_dirs.append('linux/comps/phbalReg/src/Linux')
-            nxppy.include_dirs.append('linux/shared')
-            nxppy.include_dirs.append('examples/NfcrdlibEx4_MIFAREClassic/intfs')
-            nxppy.include_dirs.append('nxprdlib/NxpRdLib/comps/phbalReg/src/Stub')
-            nxppy.include_dirs.append('linux/comps/phPlatform/src/Posix')
-            nxppy.include_dirs.append('linux/comps/phOsal/src/Posix')
 
         self.execute(compile, [], 'compiling NxpRdLib')
 
