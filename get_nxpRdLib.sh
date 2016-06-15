@@ -16,18 +16,19 @@ prereq() {
 }
 
 nxp() {
-  if [[ -d "nxprdlib" ]]; then
+  if [[ -d "nxp" ]]; then
     echo -e "NXP Reader Library found, skipping download"
   else
     echo -e "[${blue}Downloading NXP Reader Library${NC}]"
     wget https://cache.nxp.com/documents/software/sw3693.zip -O nxp.zip
-    unzip -o nxp.zip
+    unzip -o -d nxp nxp.zip
+    rm nxp.zip
   fi
 
-  cd build
+  pushd nxp/build > /dev/null
   cmake ..
   make NxpRdLibLinuxPN512
-  cd ..
+  popd > /dev/null
 }
 
 cleanup() {
