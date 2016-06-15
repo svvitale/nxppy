@@ -19,14 +19,7 @@ The EXPLORE-NFC card relies on SPI being enabled. Please enable SPI using raspi-
 
 Installation
 =====
-nxppy is available from PyPI.  First, install pip if you don't have it already:
-
-```
-wget https://bootstrap.pypa.io/get-pip.py
-sudo python get-pip.py
-```
-
-Then simply run:
+nxppy is available from PyPI.  To install, simply run:
 
 ```
 sudo pip install nxppy
