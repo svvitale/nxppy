@@ -152,9 +152,9 @@ phStatus_t NfcRdLibInit(void)
     #endif
     CHECK_STATUS(status);
 
-    status = phbalReg_SetPort(
+    status =phbalReg_SetPort(
         &sBalReader,
-        SPI_CONFIG);
+        (uint8_t *)SPI_CONFIG);
     CHECK_STATUS(status);
 
     /* Open BAL */
