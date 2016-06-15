@@ -254,8 +254,7 @@ PyObject *Mifare_select(Mifare *self)
 {
 phStatus_t  status = 0;
     uint16_t    wTagsDetected = 0;
-    uint8_t     bUid[PHAC_DISCLOOP_I3P3A_MAX_UID_LENGTH];
-    uint8_t     bUidSize;
+
 
 
     /* Field OFF */
@@ -297,7 +296,6 @@ phStatus_t  status = 0;
         {
 
             uint8_t byteBufferSize = sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1;
-            uint8_t byteBuffer[sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1];
             uint8_t i;
             char asciiBuffer[sDiscLoop.sTypeATargetInfo.aTypeA_I3P3[0].bUidSize + 1];
     
