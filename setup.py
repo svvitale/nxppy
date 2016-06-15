@@ -2,10 +2,10 @@ from setuptools import setup
 from distutils.core import Extension
 from distutils.command.build import build
 import os
+import sys
 from subprocess import call
 import multiprocessing
 from glob import glob
-
 
 
 nxppy = Extension('nxppy',
@@ -31,8 +31,14 @@ nxppy = Extension('nxppy',
 class build_nxppy(build):
     def run(self):
         def compile(extra_preargs=None):
-            call( './get_nxpRdLib.sh', shell=True )
+            if sys.version_info == (2, 7):
+                python_lib = 'python2.7-dev'
+            elif sys.version_info >= (3, 0):
+                python_lib = 'python3-dev'
+            else:
+                raise ValueError("Python version not supported")
 
+            call('./get_nxpRdLib.sh all ' + python_lib, shell=True)
 
         self.execute(compile, [], 'compiling NxpRdLib')
 
