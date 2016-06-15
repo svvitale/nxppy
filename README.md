@@ -74,7 +74,7 @@ while True:
     try:
         uid = mifare.select()
         print(uid)
-    except nxppy.SelectError:-
+    except nxppy.SelectError:
         # SelectError is raised if no card is in the field.
         pass
         
