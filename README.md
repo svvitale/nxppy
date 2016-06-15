@@ -46,8 +46,7 @@ mifare = nxppy.Mifare()
 # Select the first available tag and return the UID
 uid = mifare.select()
 
-# Read 16 bytes starting from block 10 
-# (each block is 4 bytes, so technically this reads blocks 10-13)
+# Read a single block of 4 bytes from block 10 
 block10bytes = mifare.read_block(10)
 
 # Write a single block of 4 bytes
