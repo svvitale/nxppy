@@ -4,7 +4,7 @@
 
 #define TX_RX_BUFFER_SIZE           128 // 128 Byte buffer
 #define DATA_BUFFER_LEN             16  /* Buffer length */
-#define MFC_BLOCK_DATA_SIZE         16  /* Block Data size - 16 Bytes */
+#define MFC_BLOCK_DATA_SIZE         4  /* Block Data size - 16 Bytes */
 
 /*******************************************************************************
 **   Global Variable Declaration
@@ -427,6 +427,10 @@ PyObject *Mifare_write_block(Mifare * self, PyObject * args)
 
     if (!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
         return NULL;
+    }
+
+    if (dataLen != PHAL_MFUL_WRITE_BLOCK_LENGTH) {
+        return PyErr_Format(WriteError, "Write data MUST be specified as %d bytes", PHAL_MFUL_WRITE_BLOCK_LENGTH);
     }
 
     status = phalMful_Write(&salMfc, blockIdx, data);
