@@ -6,7 +6,7 @@ NC='\033[0m' # No Color
 prereq() {
   PREREQS="build-essential cmake $1"
   
-  if dpkg -l $PREREQS > /dev/null 2>&1; then
+  if dpkg -s $PREREQS > /dev/null 2>&1; then
     echo -e "Prerequisites already installed: $PREREQS"
   else
     echo -e "[${blue}Installing prerequisites${NC}]"
@@ -21,7 +21,7 @@ nxp() {
   else
     echo -e "[${blue}Downloading NXP Reader Library${NC}]"
     wget https://cache.nxp.com/documents/software/sw3693.zip -O nxp.zip
-    unzip -o -d nxp nxp.zip
+    unzip -q -o -d nxp nxp.zip
     rm nxp.zip
   fi
 
