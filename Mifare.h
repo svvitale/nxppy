@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-
 /**
  * Header for hardware configuration: bus interface, reset of attached reader ID, onboard LED handling etc.
  * */
@@ -37,43 +36,61 @@
  */
 #include <ph_Status.h>
 
-/*BAL Headers*/
+/*
+ * BAL Headers
+ */
 #include <phbalReg.h>
 
-/*PAL Headers*/
+/*
+ * PAL Headers
+ */
 #include <phpalI14443p3a.h>
 #include <phpalI14443p4.h>
 #include <phpalI14443p3b.h>
 #include <phpalI14443p4a.h>
 #include <phpalMifare.h>
 
-/*AL Headers*/
+/*
+ * AL Headers
+ */
 #include <phalMfc.h>
 
 #include <phacDiscLoop.h>
 
+/*
+ * Printf macro 
+ */
 
-/* Printf macro */
-
-/* Configuration Headers */
-/* Controls build behavior of components */
+/*
+ * Configuration Headers 
+ */
+/*
+ * Controls build behavior of components 
+ */
 #include <ph_NxpBuild.h>
-/* Status code definitions */
+/*
+ * Status code definitions 
+ */
 #include <ph_Status.h>
 
-
-/* Reader Library Headers */
-/* Generic ISO14443-3A Component of
- * Reader Library Framework */
+/*
+ * Reader Library Headers 
+ */
+/*
+ * Generic ISO14443-3A Component of Reader Library Framework 
+ */
 #include <phpalI14443p3a.h>
-/* Generic ISO14443-4 Component of
- * Reader Library Framework */
+/*
+ * Generic ISO14443-4 Component of Reader Library Framework 
+ */
 #include <phpalI14443p4.h>
-/* Generic ISO14443-4A Component of
- * Reader Library Framework */
+/*
+ * Generic ISO14443-4A Component of Reader Library Framework 
+ */
 #include <phpalI14443p4a.h>
-/* Generic MIFARE(R) Ultralight Application
- * Component of Reader Library Framework */
+/*
+ * Generic MIFARE(R) Ultralight Application Component of Reader Library Framework 
+ */
 #include <phalMful.h>
 #include <phalMfc.h>
 
@@ -93,15 +110,14 @@ typedef struct {
 } nfc_data;
 
 typedef struct {
-    PyObject_HEAD
-    nfc_data data; 
+    PyObject_HEAD nfc_data data;
 } Mifare;
 
-PyObject *Mifare_init(Mifare *self, PyObject *args, PyObject *kwds);
-PyObject *Mifare_select(Mifare *self);
-PyObject *Mifare_read_block(Mifare *self, PyObject *args);
-PyObject *Mifare_read_sign(Mifare *self);
-PyObject *Mifare_write_block(Mifare *self, PyObject *args);
+PyObject *Mifare_init(Mifare * self, PyObject * args, PyObject * kwds);
+PyObject *Mifare_select(Mifare * self);
+PyObject *Mifare_read_block(Mifare * self, PyObject * args);
+PyObject *Mifare_read_sign(Mifare * self);
+PyObject *Mifare_write_block(Mifare * self, PyObject * args);
 
 extern PyObject *InitError;
 extern PyObject *SelectError;

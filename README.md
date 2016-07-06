@@ -11,7 +11,7 @@ This work was based very heavily on NXP's MifareClassic example code. The exampl
 
 Compatibility
 =====
-Tested with both Python 2.7 (as installed on Raspberry Pi) and with a manually compiled version of Python 3.4.
+Tested with both Python 2.7 and 3.4 as installed on Raspian Jessie.
 
 Requirements
 =====
@@ -19,32 +19,13 @@ The EXPLORE-NFC card relies on SPI being enabled. Please enable SPI using raspi-
 
 Installation
 =====
-nxppy is available from pypi.  First, install pip if you don't have it already:
-
-```
-wget https://bootstrap.pypa.io/get-pip.py
-sudo python get-pip.py
-```
-
-Then simply run:
+nxppy is available from PyPI.  To install, simply run:
 
 ```
 sudo pip install nxppy
 ```
 
 Installation will take some time as it automatically pulls down the NXP NFC Reader Library from souce.
-
-Source
-=====
-To install from source, use distutils:
-
-```
-git clone https://github.com/svvitale/nxppy
-cd nxppy
-sudo apt-get install python-setuptools
-sudo python setup.py build install
-
-```
 
 Usage
 =====
@@ -58,8 +39,7 @@ mifare = nxppy.Mifare()
 # Select the first available tag and return the UID
 uid = mifare.select()
 
-# Read 16 bytes starting from block 10 
-# (each block is 4 bytes, so technically this reads blocks 10-13)
+# Read a single block of 4 bytes from block 10 
 block10bytes = mifare.read_block(10)
 
 # Write a single block of 4 bytes
