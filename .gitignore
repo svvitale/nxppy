@@ -1,6 +1,6 @@
 build/
 dist/
-nose-1.3.4-py2.7.egg/
+nose-*.egg/
 nxppy.egg-info/
 test.py
 *.*~
