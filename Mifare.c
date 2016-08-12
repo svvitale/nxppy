@@ -405,6 +405,8 @@ PyObject *Mifare_read_sign(Mifare * self)
 #endif
 }
 
+
+
 PyObject *Mifare_get_version(Mifare* self)
 {
     const size_t bufferSize = PHAL_MFC_VERSION_LENGTH;
@@ -415,11 +417,15 @@ PyObject *Mifare_get_version(Mifare* self)
     status = phalMful_GetVersion(&salMfc, version);
     if (handle_error(status, ReadError)) return NULL;
     
-#if PY_MAJOR_VERSION >= 3
-    return Py_BuildValue("y#", version, bufferSize);
-#else
-    return Py_BuildValue("s#", version, bufferSize);
-#endif
+    return Py_BuildValue("{s:B, s:B, s:B, s:B, s:B, s:B, s:B}",
+                         "vendor\0",       version[1],
+                         "tag_type\0",     version[2],
+                         "tag_subtype\0",  version[3],
+                         "version_major\0",version[4],
+                         "version_minor\0",version[5],
+                         "tag_size\0",     version[6],
+                         "protocol\0",     version[7]
+                        );
 }
 
 
@@ -456,7 +462,7 @@ PyMethodDef Mifare_methods[] = {
     ,
     {"write_block", (PyCFunction) Mifare_write_block, METH_VARARGS, "Write 4 bytes starting at the specified block."}
     ,
-    {"get_version", (PyCFunction) Mifare_get_version, METH_NOARGS, "Read 7 byte version string."}
+    {"get_version", (PyCFunction) Mifare_get_version, METH_NOARGS, "Read version data as a dict."}
     ,
     {NULL}                      /* Sentinel */
 };
