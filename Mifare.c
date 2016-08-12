@@ -87,66 +87,67 @@ static phStatus_t LoadProfile(void)
      * Passive Bailout bitmap configuration
      */
     status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_BAIL_OUT, PH_OFF);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Passive poll bitmap configuration. Poll for only Type A Tags.
      */
     status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_PAS_POLL_TECH_CFG, PHAC_DISCLOOP_POS_BIT_MASK_A);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Turn OFF Passive Listen.
      */
     status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_PAS_LIS_TECH_CFG, PH_OFF);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Turn OFF active listen.
      */
     status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ACT_LIS_TECH_CFG, PH_OFF);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Turn OFF Active Poll
      */
     status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ACT_POLL_TECH_CFG, PH_OFF);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Disable LPCD feature.
      */
     status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ENABLE_LPCD, PH_OFF);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * reset collision Pending
      */
     status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_COLLISION_PENDING, PH_OFF);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * whether anti-collision is supported or not.
      */
     status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_ANTI_COLL, PH_ON);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Device limit for Type A
      */
     status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_TYPEA_DEVICE_LIMIT, PH_ON);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Discovery loop Operation mode
      */
     status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_OPE_MODE, RD_LIB_MODE_NFC);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Bailout on Type A detect
      */
     status = phacDiscLoop_SetConfig(&sDiscLoop, PHAC_DISCLOOP_CONFIG_BAIL_OUT, PHAC_DISCLOOP_POS_BIT_MASK_A);
-    CHECK_SUCCESS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Return Status
@@ -156,20 +157,19 @@ static phStatus_t LoadProfile(void)
 
 phStatus_t NfcRdLibInit(void)
 {
-
     phStatus_t status;
 
     /*
      * Initialize the Reader BAL (Bus Abstraction Layer) component
      */
     status = phbalReg_Stub_Init(&sBalReader, sizeof(phbalReg_Stub_DataParams_t));
-    CHECK_SUCCESS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Initialize the OSAL Events.
      */
     status = phOsal_Event_Init();
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     // Start interrupt thread
     Set_Interrupt();
@@ -186,16 +186,16 @@ phStatus_t NfcRdLibInit(void)
 #ifdef NXPBUILD__PHHAL_HW_RC663
     status = phbalReg_SetConfig(&sBalReader, PHBAL_REG_CONFIG_HAL_HW_TYPE, PHBAL_REG_HAL_HW_RC663);
 #endif
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     status = phbalReg_SetPort(&sBalReader, (uint8_t *) SPI_CONFIG);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Open BAL
      */
     status = phbalReg_OpenPort(&sBalReader);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Initialize the Reader HAL (Hardware Abstraction Layer) component
@@ -204,7 +204,7 @@ phStatus_t NfcRdLibInit(void)
                                  sizeof(phhalHw_Nfc_Ic_DataParams_t),
                                  &sBalReader,
                                  0, bHalBufferTx, sizeof(bHalBufferTx), bHalBufferRx, sizeof(bHalBufferRx));
-    CHECK_SUCCESS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Set the parameter to use the SPI interface
@@ -227,57 +227,57 @@ phStatus_t NfcRdLibInit(void)
      * Initialize the I14443-A PAL layer
      */
     status = phpalI14443p3a_Sw_Init(&spalI14443p3a, sizeof(phpalI14443p3a_Sw_DataParams_t), &sHal_Nfc_Ic.sHal);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Initialize the I14443-A PAL component
      */
     status = phpalI14443p4a_Sw_Init(&spalI14443p4a, sizeof(phpalI14443p4a_Sw_DataParams_t), &sHal_Nfc_Ic.sHal);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Initialize the I14443-4 PAL component
      */
     status = phpalI14443p4_Sw_Init(&spalI14443p4, sizeof(phpalI14443p4_Sw_DataParams_t), &sHal_Nfc_Ic.sHal);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Initialize the I14443-B PAL component
      */
     status = phpalI14443p3b_Sw_Init(&spalI14443p3b, sizeof(phpalI14443p3b_Sw_DataParams_t), &sHal_Nfc_Ic.sHal);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Initialize the MIFARE PAL component
      */
     status = phpalMifare_Sw_Init(&spalMifare, sizeof(phpalMifare_Sw_DataParams_t), &sHal_Nfc_Ic.sHal, NULL);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Initialize the discover component
      */
     status = phacDiscLoop_Sw_Init(&sDiscLoop, sizeof(phacDiscLoop_Sw_DataParams_t), &sHal_Nfc_Ic.sHal);
-    CHECK_SUCCESS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Load profile for Discovery loop
      */
-    LoadProfile();
+    status = LoadProfile();
+    PH_CHECK_SUCCESS(status);
 
     status = phalMfc_Sw_Init(&salMfc, sizeof(phalMfc_Sw_DataParams_t), &spalMifare, NULL);
-    CHECK_STATUS(status);
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Read the version of the reader IC
      */
 #if defined NXPBUILD__PHHAL_HW_RC523
     status = phhalHw_Rc523_ReadRegister(&sHal_Nfc_Ic.sHal, PHHAL_HW_RC523_REG_VERSION, &bDataBuffer[0]);
-    CHECK_SUCCESS(status);
 #endif
 #if defined NXPBUILD__PHHAL_HW_RC663
     status = phhalHw_Rc663_ReadRegister(&sHal_Nfc_Ic.sHal, PHHAL_HW_RC663_REG_VERSION, &bDataBuffer[0]);
-    CHECK_SUCCESS(status);
 #endif
+    PH_CHECK_SUCCESS(status);
 
     /*
      * Return Success
@@ -287,15 +287,14 @@ phStatus_t NfcRdLibInit(void)
 
 PyObject *Mifare_init(Mifare * self, PyObject * args, PyObject * kwds)
 {
-
     int ret;
     ret = Set_Interface_Link();
-    if (handle_error(ret, ReadError)) return NULL;
+    if (handle_error(ret, InitError)) return NULL;
     
     Reset_reader_device();
 
     ret = NfcRdLibInit();
-    if (handle_error(ret, ReadError)) return NULL;
+    if (handle_error(ret, InitError)) return NULL;
     
     Py_RETURN_NONE;
 }
