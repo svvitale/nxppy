@@ -5,7 +5,8 @@
 
 #define TX_RX_BUFFER_SIZE           128 // 128 Byte buffer
 #define DATA_BUFFER_LEN             16  /* Buffer length */
-#define MFC_BLOCK_DATA_SIZE         4  /* Block Data size - 16 Bytes */
+#define MFC_BLOCK_DATA_SIZE         4   /* Block Data size - 16 Bytes */
+#define PHAL_MFC_VERSION_LENGTH     0x08 // from src/phalMFC_Int.h
 
 /*******************************************************************************
 **   Global Variable Declaration
@@ -404,6 +405,24 @@ PyObject *Mifare_read_sign(Mifare * self)
 #endif
 }
 
+PyObject *Mifare_get_version(Mifare* self)
+{
+    const size_t bufferSize = PHAL_MFC_VERSION_LENGTH;
+    unsigned char version[bufferSize];
+    
+    phStatus_t status = 0;
+    
+    status = phalMful_GetVersion(&salMfc, version);
+    if (handle_error(status, ReadError)) return NULL;
+    
+#if PY_MAJOR_VERSION >= 3
+    return Py_BuildValue("y#", version, bufferSize);
+#else
+    return Py_BuildValue("s#", version, bufferSize);
+#endif
+}
+
+
 PyObject *Mifare_write_block(Mifare * self, PyObject * args)
 {
     phStatus_t status = 0;
@@ -436,6 +455,8 @@ PyMethodDef Mifare_methods[] = {
     {"read_sign", (PyCFunction) Mifare_read_sign, METH_NOARGS, "Read 32 bytes card manufacturer signature."}
     ,
     {"write_block", (PyCFunction) Mifare_write_block, METH_VARARGS, "Write 4 bytes starting at the specified block."}
+    ,
+    {"get_version", (PyCFunction) Mifare_get_version, METH_NOARGS, "Read 7 byte version string."}
     ,
     {NULL}                      /* Sentinel */
 };
