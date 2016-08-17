@@ -39,6 +39,9 @@ uint8_t bSak;                   /* SAK card type information */
 uint16_t wAtqa;                 /* ATQA card type information */
 uint8_t blockcnt = 0;
 
+/* Empty data */
+uint8_t CLEAR_DATA[PHAL_MFUL_WRITE_BLOCK_LENGTH];
+
 /** General information bytes to be sent with ATR */
 const uint8_t GI[] = { 0x46, 0x66, 0x6D,
     0x01, 0x01, 0x10, /*VERSION*/ 0x03, 0x02, 0x00, 0x01, /*WKS*/ 0x04, 0x01, 0xF1 /*LTO*/
@@ -291,12 +294,18 @@ PyObject *Mifare_init(Mifare * self, PyObject * args, PyObject * kwds)
     int ret;
     ret = Set_Interface_Link();
     if (handle_error(ret, InitError)) return NULL;
-    
+
     Reset_reader_device();
 
     ret = NfcRdLibInit();
     if (handle_error(ret, InitError)) return NULL;
-    
+
+    //prep clear data
+    int i;
+    for (i=0; i<PHAL_MFUL_WRITE_BLOCK_LENGTH; i++) {
+        CLEAR_DATA[i] = 0;
+    }
+
     Py_RETURN_NONE;
 }
 
@@ -405,7 +414,26 @@ PyObject *Mifare_read_sign(Mifare * self)
 #endif
 }
 
+PyObject *Mifare_write_block(Mifare * self, PyObject * args)
+{
+    phStatus_t status = 0;
+    uint8_t blockIdx;
+    uint8_t *data;
+    int dataLen;
 
+    if (!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
+        return NULL;
+    }
+
+    if (dataLen != PHAL_MFUL_WRITE_BLOCK_LENGTH) {
+        return PyErr_Format(WriteError, "Write data MUST be specified as %d bytes", PHAL_MFUL_WRITE_BLOCK_LENGTH);
+    }
+
+    status = phalMful_Write(&salMfc, blockIdx, data);
+    if (handle_error(status, WriteError)) return NULL;
+
+    Py_RETURN_NONE;
+}
 
 PyObject *Mifare_get_version(Mifare* self)
 {
@@ -428,23 +456,15 @@ PyObject *Mifare_get_version(Mifare* self)
                         );
 }
 
-
-PyObject *Mifare_write_block(Mifare * self, PyObject * args)
-{
+PyObject* Mifare_clear_block(Mifare* self, PyObject* args) {
     phStatus_t status = 0;
     uint8_t blockIdx;
-    uint8_t *data;
-    int dataLen;
 
-    if (!PyArg_ParseTuple(args, "bs#", &blockIdx, &data, &dataLen)) {
+    if (!PyArg_ParseTuple(args, "b", &blockIdx)) {
         return NULL;
     }
 
-    if (dataLen != PHAL_MFUL_WRITE_BLOCK_LENGTH) {
-        return PyErr_Format(WriteError, "Write data MUST be specified as %d bytes", PHAL_MFUL_WRITE_BLOCK_LENGTH);
-    }
-
-    status = phalMful_Write(&salMfc, blockIdx, data);
+    status = phalMful_Write(&salMfc, blockIdx, CLEAR_DATA);
     if (handle_error(status, WriteError)) return NULL;
 
     Py_RETURN_NONE;
@@ -456,13 +476,15 @@ PyObject *Mifare_write_block(Mifare * self, PyObject * args)
 PyMethodDef Mifare_methods[] = {
     {"select", (PyCFunction) Mifare_select, METH_NOARGS, "Select a Mifare card if present. Returns the card UID"}
     ,
-    {"read_block", (PyCFunction) Mifare_read_block, METH_VARARGS, "Read 16 bytes starting at the specified block."}
+    {"read_block", (PyCFunction) Mifare_read_block, METH_VARARGS, "Read 4 bytes starting at the specified block."}
     ,
     {"read_sign", (PyCFunction) Mifare_read_sign, METH_NOARGS, "Read 32 bytes card manufacturer signature."}
     ,
     {"write_block", (PyCFunction) Mifare_write_block, METH_VARARGS, "Write 4 bytes starting at the specified block."}
     ,
     {"get_version", (PyCFunction) Mifare_get_version, METH_NOARGS, "Read version data as a dict."}
+    ,
+    {"clear_block", (PyCFunction) Mifare_clear_block, METH_VARARGS, "Clear 4 bytes starting at the specifed block."}
     ,
     {NULL}                      /* Sentinel */
 };
