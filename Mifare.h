@@ -58,38 +58,38 @@
 #include <phacDiscLoop.h>
 
 /*
- * Printf macro 
+ * Printf macro
  */
 
 /*
- * Configuration Headers 
+ * Configuration Headers
  */
 /*
- * Controls build behavior of components 
+ * Controls build behavior of components
  */
 #include <ph_NxpBuild.h>
 /*
- * Status code definitions 
+ * Status code definitions
  */
 #include <ph_Status.h>
 
 /*
- * Reader Library Headers 
+ * Reader Library Headers
  */
 /*
- * Generic ISO14443-3A Component of Reader Library Framework 
+ * Generic ISO14443-3A Component of Reader Library Framework
  */
 #include <phpalI14443p3a.h>
 /*
- * Generic ISO14443-4 Component of Reader Library Framework 
+ * Generic ISO14443-4 Component of Reader Library Framework
  */
 #include <phpalI14443p4.h>
 /*
- * Generic ISO14443-4A Component of Reader Library Framework 
+ * Generic ISO14443-4A Component of Reader Library Framework
  */
 #include <phpalI14443p4a.h>
 /*
- * Generic MIFARE(R) Ultralight Application Component of Reader Library Framework 
+ * Generic MIFARE(R) Ultralight Application Component of Reader Library Framework
  */
 #include <phalMful.h>
 #include <phalMfc.h>
