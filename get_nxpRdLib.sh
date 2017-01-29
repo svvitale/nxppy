@@ -25,8 +25,9 @@ nxp() {
     rm nxp.zip
   fi
 
+  rm -rf nxp/build/*
   pushd nxp/build > /dev/null
-  cmake ..
+  CFLAGS=-fPIC cmake ..
   make NxpRdLibLinuxPN512
   popd > /dev/null
 }
