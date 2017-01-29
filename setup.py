@@ -33,14 +33,7 @@ class BuildNxppy(build):
     def run(self):
         # noinspection PyUnusedLocal
         def compile(extra_preargs=None):
-            if sys.version_info >= (3, 0):
-                python_lib = 'python3-dev'
-            elif sys.version_info >= (2, 7):
-                python_lib = 'python2.7-dev'
-            else:
-                raise ValueError("Python version not supported")
-
-            call('./get_nxpRdLib.sh all ' + python_lib, shell=True)
+            call('./get_nxpRdLib.sh all', shell=True)
 
         self.execute(compile, [], 'compiling NxpRdLib')
 
