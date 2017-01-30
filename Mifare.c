@@ -271,7 +271,7 @@ PyObject *Mifare_init(Mifare * self, PyObject * args, PyObject * kwds)
     ret = NfcRdLibInit(&(self->nfcData));
     if (handle_error(ret, InitError)) return NULL;
 
-    Py_RETURN_NONE;
+    return 0;
 }
 
 PyObject *Mifare_select(Mifare * self)
