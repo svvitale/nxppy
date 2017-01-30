@@ -47,7 +47,7 @@ mifare = nxppy.Mifare()
 # Select the first available tag and return the UID
 uid = mifare.select()
 
-# Read a single block of 4 bytes from block 10 
+# Read a single block of 4 bytes from block 10
 block10bytes = mifare.read_block(10)
 
 # Write a single block of 4 bytes
@@ -70,7 +70,7 @@ while True:
     except nxppy.SelectError:
         # SelectError is raised if no card is in the field.
         pass
-        
+
     time.sleep(1)
 ```
 
