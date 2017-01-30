@@ -20,14 +20,14 @@ The EXPLORE-NFC card relies on SPI being enabled. Please enable SPI using raspi-
 Installation
 =====
 
-nxppy is available from PyPI.  To install, first install the dependencies, e.g. on Raspian (replace `python3-dev` with `python2-dev` if you are using Python 2)
+nxppy is available from PyPI.  To install, first install the dependencies, e.g. on Raspian (replace `python3-dev` with `python2.7-dev` if you are using Python 2)
 
 ```
 sudo apt-get update
 sudo apt-get install build-essential cmake python3-dev unzip wget
 ```
 
-then simply run.
+then simply run:
 
 ```
 pip install nxppy
@@ -73,6 +73,20 @@ while True:
 
     time.sleep(1)
 ```
+
+Common Issues
+=====
+**I encounter `fatal error: Python.h: No such file or directory` during install.**
+
+>The Python development package is required for nxppy install.  If you're using Raspbian, you can install this package using `sudo apt-get install python<xx>-dev` where "&lt;xx&gt;" is either "2.7" or "3" depending on which version of Python you're using.
+
+**I encounter `error: nxp/build/linux/libNxpRdLibLinuxPN512.a: No such file or directory` during install.**
+
+>Do you also see `cmake: command not found` further up in the error output?  If so, you're missing cmake.  If you're using Raspbian, you can install cmake using `sudo apt-get install cmake`.
+
+**I encounter `error: [Errno 13] Permission denied: '/usr/local/lib/python2.7/dist-packages/nxppy.so'` during install.**
+
+>Looks like you're trying to install nxppy into the global python site-packages directory.  There are [many](https://realpython.com/blog/python/python-virtual-environments-a-primer/) [many](https://www.davidfischer.name/2010/04/why-you-should-be-using-pip-and-virtualenv/) [many](https://www.dabapps.com/blog/introduction-to-pip-and-virtualenv-python/) blog posts out there about why it's best to develop Python applications using a virtualenv.  If you *really* want to install nxppy into the global package store, you can install with `sudo pip install nxppy`.  It's **not** recommended.
 
 Feedback
 =====
