@@ -40,10 +40,13 @@ mifare = nxppy.Mifare()
 uid = mifare.select()
 
 # Read a single block of 4 bytes from block 10 
-block10bytes = mifare.read_block(10)
+block10_bytes = mifare.read_block(10)
 
 # Write a single block of 4 bytes
 mifare.write_block(10, 'abcd')
+
+# Read the entire user data area (this relies on byte 2 of the capability container being set to the correct tag size)
+user_data = mifare.read()
 ```
 
 Example polling for tags:
@@ -64,6 +67,25 @@ while True:
         pass
         
     time.sleep(1)
+```
+
+NDEF records can be read as bytes, and then passed through [ndeflib](https://github.com/nfcpy/ndeflib) for parsing
+
+```python
+import nxppy
+import ndef
+
+# Instantiate reader
+mifare = nxppy.Mifare()
+
+# Select tag
+uid = mifare.select()
+
+# Read NDEF data
+ndef_data = mifare.read_ndef()
+
+# Parse NDEF data
+ndef_records = list(ndef.message_decoder(ndef_data))
 ```
 
 Feedback

@@ -439,6 +439,140 @@ PyObject* Mifare_clear_block(Mifare* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
+PyObject* Mifare_read(Mifare *self, PyObject *args) {
+
+    phStatus_t status = 0;
+    uint8_t capContainerBuffer[READ_BUFFER_LEN];
+
+    // Read the capability container
+    status = phalMful_Read(&(self->nfcData.salMfc), 3, capContainerBuffer);
+    if (handle_error(status, ReadError)) return NULL;
+
+    uint8_t memorySize = capContainerBuffer[2];
+    uint16_t userMemorySizeBytes = memorySize * 8;  // According to NFC Forum Type 2 Tag Operation Specification
+    uint16_t userMemorySizePages = userMemorySizeBytes / MFC_BLOCK_DATA_SIZE;
+
+    // Allocate our read buffer
+    uint8_t *readBuffer = malloc(userMemorySizeBytes);
+
+    if (readBuffer == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    uint16_t userDataStartPage = 4;
+
+    // Perform the read
+    // The read command reads 16 bytes or 4 full pages at once.
+    for (uint16_t pageIdx = 0; pageIdx < userMemorySizePages; pageIdx += 4) {
+
+        status = phalMful_Read(&(self->nfcData.salMfc), userDataStartPage + pageIdx, &readBuffer[pageIdx * MFC_BLOCK_DATA_SIZE]);
+
+        if (handle_error(status, ReadError)) {
+            free(readBuffer);
+            return NULL;
+        }
+    }
+
+    PyObject * retval =
+#if PY_MAJOR_VERSION >= 3
+        Py_BuildValue("y#", readBuffer, userMemorySizeBytes);
+#else
+        Py_BuildValue("s#", readBuffer, userMemorySizeBytes);
+#endif
+
+    // Data is all copied, we can free the read buffer now.
+    free(readBuffer);
+
+    return retval;
+}
+
+PyObject* Mifare_read_ndef(Mifare *self, PyObject *args) {
+
+    phStatus_t status = 0;
+    uint8_t capContainerBuffer[READ_BUFFER_LEN];
+
+    // Read the capability container
+    status = phalMful_Read(&(self->nfcData.salMfc), 3, capContainerBuffer);
+    if (handle_error(status, ReadError)) return NULL;
+
+    if (capContainerBuffer[0] != 0xE1) {
+        return PyErr_Format(ReadError, "Tag does not contain NDEF data");
+    }
+
+    uint8_t memorySize = capContainerBuffer[2];
+    uint16_t userMemorySizeBytes = memorySize * 8;  // According to NFC Forum Type 2 Tag Operation Specification
+    uint16_t userMemorySizePages = userMemorySizeBytes / MFC_BLOCK_DATA_SIZE;
+
+    // Allocate our read buffer
+    uint8_t *readBuffer = malloc(userMemorySizeBytes);
+
+    if (readBuffer == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    uint16_t userDataStartPage = 4;
+
+    // Perform the read
+    // The read command reads 16 bytes or 4 full pages at once.
+    for (uint16_t pageIdx = 0; pageIdx < userMemorySizePages; pageIdx += 4) {
+
+        status = phalMful_Read(&(self->nfcData.salMfc), userDataStartPage + pageIdx, &readBuffer[pageIdx * MFC_BLOCK_DATA_SIZE]);
+
+        if (handle_error(status, ReadError)) {
+            free(readBuffer);
+            return NULL;
+        }
+    }
+
+    // Now search for the first NDEF TLV
+    uint16_t dataIdx = 0;
+
+    PyObject * ndefData = NULL;
+
+    while (dataIdx <= userMemorySizeBytes) {
+        // Pull out the TLV type
+        uint8_t tlv_type = readBuffer[dataIdx];
+        dataIdx++;
+
+        // Pull out the TLV length
+        uint16_t tlv_length = 0;
+
+        if (readBuffer[dataIdx] == 0xff) {
+            // Multi-byte length
+            tlv_length = *((uint16_t *) &readBuffer[dataIdx + 1]);
+            dataIdx += 3;
+        }
+        else {
+            // Single-byte length
+            tlv_length = readBuffer[dataIdx];
+            dataIdx++;
+        }
+
+        if (tlv_type == 0x03) {
+            // Found an NDEF record, return it in its entirety.
+            ndefData =
+        #if PY_MAJOR_VERSION >= 3
+                Py_BuildValue("y#", &readBuffer[dataIdx], tlv_length);
+        #else
+                Py_BuildValue("s#", &readBuffer[dataIdx], tlv_length);
+        #endif
+            break;
+        }
+
+        // Some other TLV type found, increcement past it.
+        dataIdx += tlv_length;
+    }
+
+    // Data is all copied, we can free the read buffer now.
+    free(readBuffer);
+
+    if (ndefData == NULL) {
+        return PyErr_Format(ReadError, "Could not find NDEF TLV segment");
+    }
+
+    return ndefData;
+}
+
 /***********************************
 ** Python Type Definiton
 ***********************************/
@@ -454,6 +588,10 @@ PyMethodDef Mifare_methods[] = {
     {"get_version", (PyCFunction) Mifare_get_version, METH_NOARGS, "Read version data as a dict."}
     ,
     {"clear_block", (PyCFunction) Mifare_clear_block, METH_VARARGS, "Clear 4 bytes starting at the specifed block."}
+    ,
+    {"read", (PyCFunction) Mifare_read, METH_VARARGS, "Reads all user data stored on the selected tag. Currently supports NTAG213/215/216."}
+    ,
+    {"read_ndef", (PyCFunction) Mifare_read_ndef, METH_VARARGS, "Attempt to read the first NDEF Message stored on the selected tag."}
     ,
     {NULL}                      /* Sentinel */
 };
