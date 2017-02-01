@@ -1,6 +1,6 @@
 from setuptools import setup
 from distutils.core import Extension
-from distutils.command.build import build
+from distutils.command.build_ext import build_ext
 import sys
 from subprocess import call
 
@@ -29,23 +29,16 @@ nxppy = Extension('nxppy',
 
 
 # noinspection PyShadowingBuiltins
-class BuildNxppy(build):
+class BuildNxppy(build_ext):
     def run(self):
         # noinspection PyUnusedLocal
         def compile(extra_preargs=None):
-            if sys.version_info >= (3, 0):
-                python_lib = 'python3-dev'
-            elif sys.version_info >= (2, 7):
-                python_lib = 'python2.7-dev'
-            else:
-                raise ValueError("Python version not supported")
-
-            call('./get_nxpRdLib.sh all ' + python_lib, shell=True)
+            call('./get_nxpRdLib.sh all', shell=True)
 
         self.execute(compile, [], 'compiling NxpRdLib')
 
         # Run the rest of the build
-        build.run(self)
+        build_ext.run(self)
 
 
 short_description = 'A python extension for interfacing with the NXP PN512 NFC Reader. Targeted specifically for ' \
@@ -68,4 +61,4 @@ setup(name='nxppy',
       author_email='svvitale@gmail.com',
       url='http://github.com/svvitale/nxppy',
       ext_modules=[nxppy],
-      cmdclass={'build': BuildNxppy})
+      cmdclass={'build_ext': BuildNxppy})
