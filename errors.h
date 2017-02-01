@@ -96,9 +96,8 @@ char* desc_ph_error(phStatus_t status) {
     case PHAC_DISCLOOP_MULTI_DEVICES_RESOLVED:
         return "Multiple cards/devices resolved";
     }
-    char* buff = (char*)malloc(sizeof(char)*30);
-    sprintf(buff, "Unknown Error: %02X", (status & PH_ERR_MASK));
-    return buff;
+
+    return "Unknown Error";
 }
 
 
@@ -171,10 +170,8 @@ char* desc_ph_comp(phStatus_t status) {
     case PH_COMP_PLATFORM:
         return "MicroController Platform Component";
     }
-    
-    char* buff = (char*)malloc(sizeof(char)*35);
-    sprintf(buff, "Undefined Component: %02X", (status & PH_COMP_MASK));
-    return buff;
+
+    return "Undefined Component";
 }
 
 int handle_error_msg(phStatus_t status, PyObject* errorType, char* message) {
