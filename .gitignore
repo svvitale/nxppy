@@ -8,3 +8,6 @@ test.py
 nxp/
 .idea/
 *.so
+*.cbp
+README.html
+
