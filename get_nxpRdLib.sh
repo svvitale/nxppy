@@ -8,7 +8,7 @@ nxp() {
     echo -e "NXP Reader Library found, skipping download"
   else
     echo -e "[${blue}Downloading NXP Reader Library${NC}]"
-    wget https://nxp.box.com/shared/static/xxuwpzh2ztl63b8ujsclg5wqsmlxfmw1.zip -O nxp.zip
+    wget "https://nxp1.sharepoint.com/sites/6_1/S&CExternal/_layouts/15/guestaccess.aspx?docid=0afe70cb96bba406d9c3c27534d03087d&authkey=AU04PywGBtgqJtk4Fp0GT0M" -O nxp.zip
     unzip -q -o -d nxp nxp.zip
     rm nxp.zip
   fi
