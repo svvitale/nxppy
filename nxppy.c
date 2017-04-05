@@ -5,6 +5,7 @@ PyObject *InitError;
 PyObject *SelectError;
 PyObject *ReadError;
 PyObject *WriteError;
+PyObject *AuthError;
 
 /*
  * ########################################################### # Python Extension definitions
@@ -74,6 +75,10 @@ void initnxppy(void)
     WriteError = PyErr_NewException("nxppy.WriteError", NULL, NULL);
     Py_INCREF(WriteError);
     PyModule_AddObject(module, "WriteError", WriteError);
+
+    AuthError = PyErr_NewException("nxppy.AuthError", NULL, NULL);
+    Py_INCREF(AuthError);
+    PyModule_AddObject(module, "AuthError", AuthError);
 
 #if PY_MAJOR_VERSION >= 3
     return module;
