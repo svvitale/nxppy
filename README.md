@@ -96,6 +96,68 @@ ndef_data = mifare.read_ndef()
 ndef_records = list(ndef.message_decoder(ndef_data))
 ```
 
+**Authentication example:**<br />
+This example uses the address layout of a NTAG216 card. Please refer to the specific card manual for the address layout.<br />
+NTAG cards remain authenticated until removed from field or an error occurs. Reauthenticate to gain access again.
+
+NTAG216 configuration page layout:
+
+| Address  | Byte 0 | Byte 1 |    Byte 2    | Byte 3 |
+| -------- | ------- | ----- | ------------ | ------ |
+|   0xE3   | Mirror  | RFUI  | Morror_Page  | AUTH0  |
+|   0xE4   | Access  | RFUI  |    RFUI      | RFUI   |
+|   0xE5   |  PWD    |  PWD  |     PWD      |  PWD   |
+
+Relevant parts:<br />
+**0xE3 Byte3** Defines the address from which the password verification is required<br />
+**0xE4 Byte0 Bit7** Defines access protection: 0 for write protection (read only), 1 for read and write protection<br />
+**0xE5** All 4 bytes are used to store the password
+
+Values not mentioned here are the cards default values and not altered by this script.
+
+
+```python
+import nxppy
+
+#initilize and select tag
+mifare = nxppy.Mifare()
+uid = mifare.select()
+
+
+#Enable protection
+####################
+
+#write password 1234
+mifare.write_block(0xE5, '1234')
+
+#password protection starting at address D1
+mifare.write_block(0xE3, b'\x04\x00\x00\xD1')
+
+#enable readprotection (default is write protection only)
+mifare.write_block(0xE4, b'\x80\x05\x00\x00')
+
+
+#authenticate
+####################
+mifare.pwd_auth('1234')
+#read and write from/to protected address space
+
+
+#disable protection
+####################
+
+#reset password
+mifare.write_block(0xE5, b'\xFF\xFF\xFF\xFF')
+
+#set protection addr beyond address space
+mifare.write_block(0xE3, b'\x04\x00\x00\xE7')
+
+#reset readprotection 
+mifare.write_block(0xE4, b'\x00\x05\x00\x00')
+
+```
+
+
 Common Issues
 =====
 **I encounter `fatal error: Python.h: No such file or directory` during install.**
