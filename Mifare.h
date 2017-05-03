@@ -104,6 +104,7 @@
 #define WRITE_BUFFER_LEN            PHAL_MFUL_WRITE_BLOCK_LENGTH  /* Buffer length */
 #define MFC_BLOCK_DATA_SIZE         4   /* Block Data size - 16 Bytes */
 #define PHAL_MFC_VERSION_LENGTH     0x08 // from src/phalMFC_Int.h
+#define PHAL_AUTH_PACK_LENGTH       0x02 
 
 typedef struct {
     /* BAL component holder */
@@ -135,11 +136,13 @@ PyObject *Mifare_select(Mifare * self);
 PyObject *Mifare_read_block(Mifare * self, PyObject * args);
 PyObject *Mifare_read_sign(Mifare * self);
 PyObject *Mifare_write_block(Mifare * self, PyObject * args);
+PyObject *Mifare_pwd_auth(Mifare * self, PyObject * args);
 
 extern PyObject *InitError;
 extern PyObject *SelectError;
 extern PyObject *ReadError;
 extern PyObject *WriteError;
+extern PyObject *AuthError;
 
 extern PyMethodDef Mifare_methods[];
 extern PyTypeObject MifareType;
