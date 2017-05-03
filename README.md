@@ -104,7 +104,7 @@ NTAG216 configuration page layout:
 
 | Address  | Byte 0 | Byte 1 |    Byte 2    | Byte 3 |
 | -------- | ------- | ----- | ------------ | ------ |
-|   0xE3   | Mirror  | RFUI  | Morror_Page  | AUTH0  |
+|   0xE3   | Mirror  | RFUI  | Mirror_Page  | AUTH0  |
 |   0xE4   | Access  | RFUI  |    RFUI      | RFUI   |
 |   0xE5   |  PWD    |  PWD  |     PWD      |  PWD   |
 
