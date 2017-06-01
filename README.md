@@ -1,6 +1,6 @@
 nxppy
 =====
-nxppy is a *very* simple Python wrapper for interfacing with the excellent [NXP EXPLORE-NFC shield](http://uk.farnell.com/nxp-explore-nfc) for the [Raspberry Pi](http://www.raspberrypi.org/).  It takes NXP's NFC Reader Library and provides a thin layer for detecting a Mifare NFC tag, reading its UID (unique identifier), and reading/writing data from/to the user area.
+nxppy is a *very* simple Python wrapper for interfacing with the excellent [NXP EXPLORE-NFC shield](https://www.newark.com/nxp/explore-nfc-ww/nfc-add-on-board-raspberry-pi/dp/45X6356) for the [Raspberry Pi](http://www.raspberrypi.org/).  It takes NXP's NFC Reader Library and provides a thin layer for detecting a Mifare NFC tag, reading its UID (unique identifier), and reading/writing data from/to the user area.
 
 License
 =====
