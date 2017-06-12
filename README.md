@@ -33,7 +33,7 @@ then simply run:
 pip install nxppy
 ```
 
-Installation will take some time as it automatically pulls down the NXP NFC Reader Library from souce.
+Installation will take some time as it automatically pulls down the NXP NFC Reader Library from source.
 
 Usage
 =====
