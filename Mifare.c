@@ -271,7 +271,7 @@ PyObject *Mifare_init(Mifare * self, PyObject * args, PyObject * kwds)
     ret = NfcRdLibInit(&(self->nfcData));
     if (handle_error(ret, InitError)) return NULL;
 
-    Py_RETURN_NONE;
+    return 0;
 }
 
 PyObject *Mifare_select(Mifare * self)
@@ -573,6 +573,27 @@ PyObject* Mifare_read_ndef(Mifare *self, PyObject *args) {
     return ndefData;
 }
 
+PyObject* Mifare_pwd_auth(Mifare *self, PyObject *args) {
+
+    uint8_t *pwd;
+    uint8_t packBuffer[PHAL_AUTH_PACK_LENGTH];
+
+    if (!PyArg_ParseTuple(args, "s", &pwd)) {
+        return NULL;
+    }
+
+    phStatus_t status = 0;
+
+    status = phalMful_PwdAuth(&(self->nfcData.salMfc), pwd, packBuffer);
+    if (handle_error(status, AuthError)) return NULL;
+
+#if PY_MAJOR_VERSION >= 3
+    return Py_BuildValue("y#", packBuffer, MFC_BLOCK_DATA_SIZE);
+#else
+    return Py_BuildValue("s#", packBuffer, MFC_BLOCK_DATA_SIZE);
+#endif
+}
+
 /***********************************
 ** Python Type Definiton
 ***********************************/
@@ -592,6 +613,8 @@ PyMethodDef Mifare_methods[] = {
     {"read", (PyCFunction) Mifare_read, METH_VARARGS, "Reads all user data stored on the selected tag. Currently supports NTAG213/215/216."}
     ,
     {"read_ndef", (PyCFunction) Mifare_read_ndef, METH_VARARGS, "Attempt to read the first NDEF Message stored on the selected tag."}
+    ,
+    {"pwd_auth", (PyCFunction) Mifare_pwd_auth, METH_VARARGS, "Authenticate with password"}
     ,
     {NULL}                      /* Sentinel */
 };
