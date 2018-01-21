@@ -1,6 +1,6 @@
 nxppy
 =====
-nxppy is a *very* simple Python wrapper for interfacing with the excellent [NXP EXPLORE-NFC shield](http://uk.farnell.com/nxp-explore-nfc) for the [Raspberry Pi](http://www.raspberrypi.org/).  It takes NXP's NFC Reader Library and provides a thin layer for detecting a Mifare NFC tag, reading its UID (unique identifier), and reading/writing data from/to the user area.
+nxppy is a *very* simple Python wrapper for interfacing with the excellent [NXP EXPLORE-NFC shield](https://www.newark.com/nxp/explore-nfc-ww/nfc-add-on-board-raspberry-pi/dp/45X6356) for the [Raspberry Pi](http://www.raspberrypi.org/).  It takes NXP's NFC Reader Library and provides a thin layer for detecting a Mifare NFC tag, reading its UID (unique identifier), and reading/writing data from/to the user area.
 
 License
 =====
@@ -33,7 +33,7 @@ then simply run:
 pip install nxppy
 ```
 
-Installation will take some time as it automatically pulls down the NXP NFC Reader Library from souce.
+Installation will take some time as it automatically pulls down the NXP NFC Reader Library from source.
 
 Usage
 =====
@@ -95,6 +95,68 @@ ndef_data = mifare.read_ndef()
 # Parse NDEF data
 ndef_records = list(ndef.message_decoder(ndef_data))
 ```
+
+**Authentication example:**<br />
+This example uses the address layout of a NTAG216 card. Please refer to the specific card manual for the address layout.<br />
+NTAG cards remain authenticated until removed from field or an error occurs. Reauthenticate to gain access again.
+
+NTAG216 configuration page layout:
+
+| Address  | Byte 0 | Byte 1 |    Byte 2    | Byte 3 |
+| -------- | ------- | ----- | ------------ | ------ |
+|   0xE3   | Mirror  | RFUI  | Mirror_Page  | AUTH0  |
+|   0xE4   | Access  | RFUI  |    RFUI      | RFUI   |
+|   0xE5   |  PWD    |  PWD  |     PWD      |  PWD   |
+
+Relevant parts:<br />
+**0xE3 Byte3** Defines the address from which the password verification is required<br />
+**0xE4 Byte0 Bit7** Defines access protection: 0 for write protection (read only), 1 for read and write protection<br />
+**0xE5** All 4 bytes are used to store the password
+
+Values not mentioned here are the cards default values and not altered by this script.
+
+
+```python
+import nxppy
+
+#initilize and select tag
+mifare = nxppy.Mifare()
+uid = mifare.select()
+
+
+#Enable protection
+####################
+
+#write password 1234
+mifare.write_block(0xE5, '1234')
+
+#password protection starting at address D1
+mifare.write_block(0xE3, b'\x04\x00\x00\xD1')
+
+#enable readprotection (default is write protection only)
+mifare.write_block(0xE4, b'\x80\x05\x00\x00')
+
+
+#authenticate
+####################
+mifare.pwd_auth('1234')
+#read and write from/to protected address space
+
+
+#disable protection
+####################
+
+#reset password
+mifare.write_block(0xE5, b'\xFF\xFF\xFF\xFF')
+
+#set protection addr beyond address space
+mifare.write_block(0xE3, b'\x04\x00\x00\xE7')
+
+#reset readprotection 
+mifare.write_block(0xE4, b'\x00\x05\x00\x00')
+
+```
+
 
 Common Issues
 =====
