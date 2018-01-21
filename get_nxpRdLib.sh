@@ -4,6 +4,11 @@ blue='\033[0;34m'
 NC='\033[0m' # No Color
 
 nxp() {
+  if [[ -f "nxp.zip" ]]; then
+    echo -e "nxp.zip found, extracting"
+    unzip -q -o -d nxp nxp.zip
+  fi
+
   if [[ -d "nxp" ]]; then
     echo -e "NXP Reader Library found, skipping download"
   else
