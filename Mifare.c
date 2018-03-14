@@ -357,9 +357,9 @@ PyObject *Mifare_read_block(Mifare * self, PyObject * args)
 
     // The read command reads a full 16 bytes, but we only want to return 1 page worth of data for this command.
 #if PY_MAJOR_VERSION >= 3
-    return Py_BuildValue("y#", bDataBuffer, MFC_BLOCK_DATA_SIZE);
+    return Py_BuildValue("y#", bDataBuffer, 4);
 #else
-    return Py_BuildValue("s#", bDataBuffer, MFC_BLOCK_DATA_SIZE);
+    return Py_BuildValue("s#", bDataBuffer, 4);
 #endif
 }
 
@@ -464,7 +464,7 @@ PyObject* Mifare_read(Mifare *self, PyObject *args) {
     // Perform the read
     // The read command reads 16 bytes or 4 full pages at once.
     for (uint16_t pageIdx = 0; pageIdx < userMemorySizePages; pageIdx += 4) {
-
+        
         status = phalMful_Read(&(self->nfcData.salMfc), userDataStartPage + pageIdx, &readBuffer[pageIdx * MFC_BLOCK_DATA_SIZE]);
 
         if (handle_error(status, ReadError)) {
@@ -588,9 +588,9 @@ PyObject* Mifare_pwd_auth(Mifare *self, PyObject *args) {
     if (handle_error(status, AuthError)) return NULL;
 
 #if PY_MAJOR_VERSION >= 3
-    return Py_BuildValue("y#", packBuffer, MFC_BLOCK_DATA_SIZE);
+    return Py_BuildValue("y#", packBuffer, 4);
 #else
-    return Py_BuildValue("s#", packBuffer, MFC_BLOCK_DATA_SIZE);
+    return Py_BuildValue("s#", packBuffer, 4);
 #endif
 }
 
