@@ -102,7 +102,7 @@
 #define TX_RX_BUFFER_SIZE           128 // 128 Byte buffer
 #define READ_BUFFER_LEN             PHAL_MFUL_READ_BLOCK_LENGTH  /* Buffer length */
 #define WRITE_BUFFER_LEN            PHAL_MFUL_WRITE_BLOCK_LENGTH  /* Buffer length */
-#define MFC_BLOCK_DATA_SIZE         4   /* Block Data size - 16 Bytes */
+#define MFC_BLOCK_DATA_SIZE         16   /* Block Data size - 16 Bytes */
 #define PHAL_MFC_VERSION_LENGTH     0x08 // from src/phalMFC_Int.h
 #define PHAL_AUTH_PACK_LENGTH       0x02 
 
