@@ -1,8 +1,12 @@
+from __future__ import print_function
 from setuptools import setup
 from distutils.core import Extension
 from distutils.command.build_ext import build_ext
 import sys
-from subprocess import call
+import os
+
+nxprdlib_include_path = '/usr/local/src/nxprdlib'
+nxprdlib_link_path = '/usr/local/lib/nxprdlib'
 
 nxppy = Extension('nxppy',
                   define_macros=[('LINUX', None),
@@ -11,18 +15,17 @@ nxppy = Extension('nxppy',
                                  ('NXPBUILD__PHHAL_HW_RC523', None)],
                   extra_compile_args=['-O0',
                                       '-std=gnu99',
-                                      '-isystemnxp/nxprdlib/NxpRdLib/intfs',
-                                      '-isystemnxp/nxprdlib/NxpRdLib/types',
-                                      '-isystemnxp/nxprdlib/NxpRdLib',
-                                      '-isystemnxp/linux/intfs',
-                                      '-isystemnxp/linux/comps/phbalReg/src/Linux',
-                                      '-isystemnxp/linux/shared',
-                                      '-isystemnxp/examples/NfcrdlibEx4_MIFAREClassic/intfs',
-                                      '-isystemnxp/nxprdlib/NxpRdLib/comps/phbalReg/src/Stub',
-                                      '-isystemnxp/linux/comps/phPlatform/src/Posix',
-                                      '-isystemnxp/linux/comps/phOsal/src/Posix'
+                                      '-isystem{}/nxprdlib/NxpRdLib/intfs'.format(nxprdlib_include_path),
+                                      '-isystem{}/nxprdlib/NxpRdLib/types'.format(nxprdlib_include_path),
+                                      '-isystem{}/nxprdlib/NxpRdLib/comps/phbalReg/src/LinuxUserSpi'.format(nxprdlib_include_path),
+                                      '-isystem{}/linux/shared'.format(nxprdlib_include_path),
+                                      '-isystem{}/examples/NfcrdlibEx4_MIFAREClassic/intfs'.format(nxprdlib_include_path),
+                                      '-isystem{}/nxprdlib/NxpRdLib/comps/phbalReg/src/Stub'.format(nxprdlib_include_path),
+                                      '-isystem{}/linux/comps/phPlatform/src/Posix'.format(nxprdlib_include_path),
+                                      '-isystem{}/linux/comps/phOsal/src/Posix'.format(nxprdlib_include_path),
+                                      '-isystem{}/linux/intfs'.format(nxprdlib_include_path)
                                       ],
-                  extra_link_args=['nxp/build/linux/libNxpRdLibLinuxPN512.a', '-lpthread', '-lrt'],
+                  extra_link_args=['{}/libNxpRdLibLinuxPN512.a'.format(nxprdlib_link_path), '-lpthread', '-lrt'],
                   sources=['Mifare.c', 'nxppy.c']
 
                   )
@@ -31,11 +34,9 @@ nxppy = Extension('nxppy',
 # noinspection PyShadowingBuiltins
 class BuildNxppy(build_ext):
     def run(self):
-        # noinspection PyUnusedLocal
-        def compile(extra_preargs=None):
-            call('./get_nxpRdLib.sh all', shell=True)
-
-        self.execute(compile, [], 'compiling NxpRdLib')
+        if not os.path.isdir(nxprdlib_include_path) or not os.path.isdir(nxprdlib_link_path):
+            print('\nNXP Reader library not found.  Install it using `sudo apt-get install nxprdlib`\n')
+            sys.exit(1)
 
         # Run the rest of the build
         build_ext.run(self)
@@ -54,7 +55,7 @@ except:
     long_description = short_description
 
 setup(name='nxppy',
-      version='1.5.1',
+      version='1.6.0',
       description=short_description,
       long_description=long_description,
       author='Scott Vitale',

@@ -357,9 +357,9 @@ PyObject *Mifare_read_block(Mifare * self, PyObject * args)
 
     // The read command reads a full 16 bytes, but we only want to return 1 page worth of data for this command.
 #if PY_MAJOR_VERSION >= 3
-    return Py_BuildValue("y#", bDataBuffer, MFC_BLOCK_DATA_SIZE);
+    return Py_BuildValue("y#", bDataBuffer, 4);
 #else
-    return Py_BuildValue("s#", bDataBuffer, MFC_BLOCK_DATA_SIZE);
+    return Py_BuildValue("s#", bDataBuffer, 4);
 #endif
 }
 
@@ -439,7 +439,7 @@ PyObject* Mifare_clear_block(Mifare* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
-PyObject* Mifare_read(Mifare *self, PyObject *args) {
+uint8_t * _Mifare_read(Mifare *self, uint16_t *bytesRead) {
 
     phStatus_t status = 0;
     uint8_t capContainerBuffer[READ_BUFFER_LEN];
@@ -450,34 +450,60 @@ PyObject* Mifare_read(Mifare *self, PyObject *args) {
 
     uint8_t memorySize = capContainerBuffer[2];
     uint16_t userMemorySizeBytes = memorySize * 8;  // According to NFC Forum Type 2 Tag Operation Specification
+
+    uint8_t remainder = userMemorySizeBytes % MFC_BLOCK_DATA_SIZE;
+
+    // Round up to the neared MFC_BLOCK_DATA_SIZE so we have enough buffer space to read to the end.
+    if (remainder != 0) {
+        userMemorySizeBytes += (MFC_BLOCK_DATA_SIZE - remainder);
+    }
+
     uint16_t userMemorySizePages = userMemorySizeBytes / MFC_BLOCK_DATA_SIZE;
 
     // Allocate our read buffer
     uint8_t *readBuffer = malloc(userMemorySizeBytes);
 
     if (readBuffer == NULL) {
-        return PyErr_NoMemory();
+        *bytesRead = 0;
+        return NULL;
     }
 
     uint16_t userDataStartPage = 4;
 
     // Perform the read
     // The read command reads 16 bytes or 4 full pages at once.
-    for (uint16_t pageIdx = 0; pageIdx < userMemorySizePages; pageIdx += 4) {
+    for (uint16_t pageIdx = 0; pageIdx < userMemorySizePages; pageIdx++) {
 
-        status = phalMful_Read(&(self->nfcData.salMfc), userDataStartPage + pageIdx, &readBuffer[pageIdx * MFC_BLOCK_DATA_SIZE]);
+        uint16_t pageToRead = userDataStartPage + (pageIdx * 4);
+        uint16_t bufferOffset = pageIdx * MFC_BLOCK_DATA_SIZE;
+        
+        status = phalMful_Read(&(self->nfcData.salMfc), pageToRead, &readBuffer[bufferOffset]);
 
         if (handle_error(status, ReadError)) {
             free(readBuffer);
+            *bytesRead = 0;
             return NULL;
         }
     }
 
+    *bytesRead = userMemorySizeBytes;
+    return readBuffer;
+}
+
+PyObject* Mifare_read(Mifare *self, PyObject *args) {
+
+    uint16_t bytesRead = 0;
+    uint8_t * readBuffer = _Mifare_read(self, &bytesRead);
+
+    if (readBuffer == NULL) {
+        return PyErr_NoMemory();
+    }
+      
     PyObject * retval =
 #if PY_MAJOR_VERSION >= 3
-        Py_BuildValue("y#", readBuffer, userMemorySizeBytes);
+        Py_BuildValue("y#", readBuffer, bytesRead);
 #else
-        Py_BuildValue("s#", readBuffer, userMemorySizeBytes);
+        Py_BuildValue("s#", readBuffer, bytesRead);
 #endif
 
     // Data is all copied, we can free the read buffer now.
@@ -488,48 +514,19 @@ PyObject* Mifare_read(Mifare *self, PyObject *args) {
 
 PyObject* Mifare_read_ndef(Mifare *self, PyObject *args) {
 
-    phStatus_t status = 0;
-    uint8_t capContainerBuffer[READ_BUFFER_LEN];
-
-    // Read the capability container
-    status = phalMful_Read(&(self->nfcData.salMfc), 3, capContainerBuffer);
-    if (handle_error(status, ReadError)) return NULL;
-
-    if (capContainerBuffer[0] != 0xE1) {
-        return PyErr_Format(ReadError, "Tag does not contain NDEF data");
-    }
-
-    uint8_t memorySize = capContainerBuffer[2];
-    uint16_t userMemorySizeBytes = memorySize * 8;  // According to NFC Forum Type 2 Tag Operation Specification
-    uint16_t userMemorySizePages = userMemorySizeBytes / MFC_BLOCK_DATA_SIZE;
-
-    // Allocate our read buffer
-    uint8_t *readBuffer = malloc(userMemorySizeBytes);
+    uint16_t bytesRead = 0;
+    uint8_t * readBuffer = _Mifare_read(self, &bytesRead);
 
     if (readBuffer == NULL) {
         return PyErr_NoMemory();
     }
-
-    uint16_t userDataStartPage = 4;
-
-    // Perform the read
-    // The read command reads 16 bytes or 4 full pages at once.
-    for (uint16_t pageIdx = 0; pageIdx < userMemorySizePages; pageIdx += 4) {
-
-        status = phalMful_Read(&(self->nfcData.salMfc), userDataStartPage + pageIdx, &readBuffer[pageIdx * MFC_BLOCK_DATA_SIZE]);
-
-        if (handle_error(status, ReadError)) {
-            free(readBuffer);
-            return NULL;
-        }
-    }
-
+ 
     // Now search for the first NDEF TLV
     uint16_t dataIdx = 0;
 
     PyObject * ndefData = NULL;
 
-    while (dataIdx <= userMemorySizeBytes) {
+    while (dataIdx <= bytesRead) {
         // Pull out the TLV type
         uint8_t tlv_type = readBuffer[dataIdx];
         dataIdx++;
@@ -588,9 +585,9 @@ PyObject* Mifare_pwd_auth(Mifare *self, PyObject *args) {
     if (handle_error(status, AuthError)) return NULL;
 
 #if PY_MAJOR_VERSION >= 3
-    return Py_BuildValue("y#", packBuffer, MFC_BLOCK_DATA_SIZE);
+    return Py_BuildValue("y#", packBuffer, 4);
 #else
-    return Py_BuildValue("s#", packBuffer, MFC_BLOCK_DATA_SIZE);
+    return Py_BuildValue("s#", packBuffer, 4);
 #endif
 }
 
