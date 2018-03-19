@@ -6,7 +6,7 @@ License
 =====
 All files in this repository are distributed under the MIT license.
 
-####External components
+#### External components
 
 NXP now releases the NFC Reader Libary as a Debian package for easy installation on a Raspberry Pi.  Start by downloading the DEB file from here:
 
