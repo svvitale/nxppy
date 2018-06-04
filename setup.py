@@ -35,7 +35,7 @@ nxppy = Extension('nxppy',
 class BuildNxppy(build_ext):
     def run(self):
         if not os.path.isdir(nxprdlib_include_path) or not os.path.isdir(nxprdlib_link_path):
-            print('\nNXP Reader library not found.  Install it using `sudo apt-get install nxprdlib`\n')
+            print('\nNXP Reader library not found.  Install it using the DEB package from http://bit.ly/nxpreader, and the instructions included in the README for this repo.\n')
             sys.exit(1)
 
         # Run the rest of the build
